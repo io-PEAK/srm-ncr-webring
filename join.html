@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join - WebRing</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="css/style.css">
+    
+</head>
+<body class="join-page">
+    <h1>Join the WebRing</h1>
+    
+    <form id ="joinForm">
+
+        <label>
+            Name 
+            <input type="text" id="name" required>
+        </label>
+
+         <label>
+            Website URL 
+            <input type="text" id="website" required>
+        </label>
+
+         <label>
+            Program 
+            <input type="text" id="program" required>
+        </label>
+
+         <label>
+             Graduation Date
+            <input type="text" id="gradDate" required placeholder="dd-mm-yyyy">
+        </label>
+
+        <label>
+            Collge Email 
+            <input type="email" id="email" required>
+        </label>
+        
+        <label>
+            Personal Email 
+            <input type="email" id="email" required>
+        </label>
+        
+        <label>
+            Badge Image URL
+            <input type="url" id="badge" required>
+        </label>
+        
+        <label>
+            Location 
+            <input type="text" id="location" required>
+        </label>
+
+        <button type="submit">Join</button>
+
+    </form>
+
+    <pre id="output"></pre>
+
+    <script src="js/join.js"></script>
+
+</body>
+</html>

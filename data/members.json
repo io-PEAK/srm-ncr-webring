@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Aarav Sharma",
+    "website": "https://example.com/aarav",
+    "program": "CSE",
+    "gradDate": "2027-06-30"
+  },
+  {
+    "name": "Priya Nair",
+    "website": "https://example.com/priya",
+    "program": "ECE",
+    "gradDate": "2026-06-30"
+  },
+  {
+    "name": "Rohan Verma",
+    "website": "https://example.com/rohan",
+    "program": "Mech",
+    "gradDate": "2028-06-30"
+  }
+]
