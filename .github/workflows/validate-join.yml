@@ -1,0 +1,22 @@
+name: Validate Join PR
+on:
+  pull_request:
+    paths:
+      - 'data/members.json'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check valid JSON and no duplicate emails
+        run: |
+          node -e "
+          const members = require('./data/members.json');
+          const emails = members.map(m => m.collegeEmail);
+          if (new Set(emails).size !== emails.length) {
+            console.error('Duplicate email found');
+            process.exit(1);
+          }
+          console.log('Validation passed');
+          "
