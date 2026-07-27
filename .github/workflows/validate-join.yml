@@ -2,21 +2,43 @@ name: Validate Join PR
 on:
   pull_request:
     paths:
-      - 'data/members.json'
+      - "data/members.json"
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check valid JSON and no duplicate emails
+
+      - name: Validate members.json
         run: |
           node -e "
           const members = require('./data/members.json');
+
           const emails = members.map(m => m.collegeEmail);
           if (new Set(emails).size !== emails.length) {
-            console.error('Duplicate email found');
+            console.error('Duplicate college email found');
             process.exit(1);
           }
+
+          for (const m of members) {
+            if (!m.name || !m.website || !m.gradDate || !m.collegeEmail) {
+              console.error('Missing required field on entry:', m);
+              process.exit(1);
+            }
+          }
+
           console.log('Validation passed');
           "
+
+      - name: Comment on failure
+        if: failure()
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body "❌ Validation failed. Check the Actions log for details."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge if valid
+        if: success()
+        run: gh pr merge "${{ github.event.pull_request.number }}" --merge --auto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

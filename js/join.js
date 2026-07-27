@@ -27,14 +27,29 @@ if (gradDate > maxDate) {
 }
 
   const entry = {
-    name: document.getElementById('name').value,
-    website: document.getElementById('website').value,
-    program: document.getElementById('program').value,
-    gradDate: gradDateValue,
-    email: document.getElementById('email').value,
-    badge: document.getElementById('badge').value,
-    location: document.getElementById('location').value,
-  };
+  name: document.getElementById('name').value,
+  website: document.getElementById('website').value,
+  program: document.getElementById('program').value,
+  gradDate: gradDateValue,
+  collegeEmail: document.getElementById('collegeEmail').value,
+  personalEmail: document.getElementById('personalEmail').value,
+  badge: document.getElementById('badge').value,
+  location: document.getElementById('location').value,
+};
 
-  document.getElementById('output').textContent = JSON.stringify(entry, null, 2);
+fetch('https://backend.srmncrwebring.workers.dev', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(entry),
+})
+  .then(response => response.json())
+  .then(result => {
+    document.getElementById('output').textContent = 'Submitted! ' + JSON.stringify(result, null, 2);
+  })
+  .catch(error => {
+    document.getElementById('output').textContent = 'Error: ' + error.message;
+  });
+  
 });
