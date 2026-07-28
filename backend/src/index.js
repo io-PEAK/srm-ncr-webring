@@ -28,7 +28,8 @@ export default {
       // 1. Get the current members.json + main branch SHA
       const fileRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/members.json`, { headers: ghHeaders });
       const fileData = await fileRes.json();
-      const members = JSON.parse(atob(fileData.content));
+      const cleanBase64 = fileData.content.replace(/\s/g, '');
+      const members = JSON.parse(atob(cleanBase64));
       members.push(entry);
 
       const mainRef = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/ref/heads/main`, { headers: ghHeaders }).then(r => r.json());

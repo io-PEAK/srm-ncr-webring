@@ -15,7 +15,7 @@ jobs:
           node -e "
           const members = require('./data/members.json');
 
-          const emails = members.map(m => m.collegeEmail);
+          const emails = members.map(m => m.collegeEmail).filter(Boolean);
           if (new Set(emails).size !== emails.length) {
             console.error('Duplicate college email found');
             process.exit(1);
