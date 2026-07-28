@@ -13,11 +13,9 @@ export default {
       return new Response('Method not allowed', { status: 405 });
     }
 
-    const entry = await request.json();
+    const url = new URL(request.url);
     const OWNER = 'io-PEAK';
     const REPO = 'srm-ncr-webring';
-    const BRANCH_NAME = `join-${entry.name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
-
     const ghHeaders = {
       Authorization: `Bearer ${env.GITHUB_TOKEN}`,
       Accept: 'application/vnd.github+json',
@@ -25,6 +23,30 @@ export default {
     };
 
     try {
+      // ── ENQUIRY ROUTE ──────────────────────────────
+      if (url.pathname === '/enquiry') {
+        const data = await request.json();
+
+        const issueRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues`, {
+          method: 'POST',
+          headers: ghHeaders,
+          body: JSON.stringify({
+            title: `Enquiry: ${data.type} — ${data.name}`,
+            body: `**Type:** ${data.type}\n**Name:** ${data.name}\n**Email:** ${data.email}\n**Details:**\n${data.details}`,
+            labels: ['enquiry'],
+          }),
+        });
+        const issue = await issueRes.json();
+
+        return new Response(JSON.stringify({ success: true, issueUrl: issue.html_url }), {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
+      // ── JOIN ROUTE (existing logic, unchanged) ─────
+      const entry = await request.json();
+      const BRANCH_NAME = `join-${entry.name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+
       // 1. Get the current members.json + main branch SHA
       const fileRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/members.json`, { headers: ghHeaders });
       const fileData = await fileRes.json();

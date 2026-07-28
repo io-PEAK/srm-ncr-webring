@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enquiry WebRing</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="join-page">
+  <h1>Request a Change</h1>
+  <form id="enquiryForm">
+    <label>Name <input type="text" id="name" required></label>
+    <label>Email <input type="email" id="email" required></label>
+    <label>Type
+  <select id="type" required>
+    <option value="" disabled selected>Select a request type</option>
+    <option value="grad-date-correction">Graduation date correction</option>
+    <option value="removal">Remove me</option>
+    <option value="badge-change">Badge change</option>
+    <option value="other">Other</option>
+  </select>
+</label>
+    <label>Details <textarea id="details" required></textarea></label>
+    <button type="submit">Submit</button>
+  </form>
+  <pre id="output"></pre>
+  <script src="js/enquiry.js"></script>
+</body>
+</html>
