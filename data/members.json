@@ -16,5 +16,15 @@
     "website": "https://example.com/rohan",
     "program": "Mech",
     "gradDate": "2028-06-30"
+  },
+  {
+    "name": "Shivam",
+    "website": "https://shivam-nagar.vercel.app/",
+    "program": "B.tech",
+    "gradDate": "2028-07-14",
+    "collegeEmail": "sn0745@srmist.edu.in",
+    "personalEmail": "test@gmail.com",
+    "badge": "https://dff.com",
+    "location": "La La Land"
   }
 ]
