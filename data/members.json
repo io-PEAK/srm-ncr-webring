@@ -8,5 +8,11 @@
     "personalEmail": "shivamnagar3931@gmail.com",
     "badge": "https://dff.com",
     "location": "La La Land"
+  },
+  {
+    "name": "Shivam",
+    "email": "shivamnagar3931@gmail.com",
+    "type": "removal",
+    "details": "Remove me"
   }
 ]
