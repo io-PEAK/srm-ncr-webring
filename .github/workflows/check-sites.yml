@@ -1,0 +1,54 @@
+name: Check Member Sites
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check site reachability
+        run: |
+          node -e "
+          const fs = require('fs');
+          const members = require('./data/members.json');
+
+          (async () => {
+            for (const m of members) {
+              try {
+                const res = await fetch(m.website, { method: 'HEAD' });
+                if (res.ok) {
+                  delete m.unreachableSince;
+                } else {
+                  m.unreachableSince = m.unreachableSince || new Date().toISOString();
+                }
+              } catch {
+                m.unreachableSince = m.unreachableSince || new Date().toISOString();
+              }
+            }
+
+            const now = new Date();
+            const remaining = members.filter(m => {
+              if (!m.unreachableSince) return true;
+              const since = new Date(m.unreachableSince);
+              const daysDown = (now - since) / (1000 * 60 * 60 * 24);
+              return daysDown < 7;
+            });
+
+            fs.writeFileSync('./data/members.json', JSON.stringify(remaining, null, 2));
+          })();
+          "
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/members.json
+          git diff --staged --quiet || git commit -m "chore: update site reachability status"
+          git push
