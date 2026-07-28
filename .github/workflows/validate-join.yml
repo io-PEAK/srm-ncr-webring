@@ -4,6 +4,10 @@ on:
     paths:
       - "data/members.json"
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -14,20 +18,17 @@ jobs:
         run: |
           node -e "
           const members = require('./data/members.json');
-
           const emails = members.map(m => m.collegeEmail).filter(Boolean);
           if (new Set(emails).size !== emails.length) {
             console.error('Duplicate college email found');
             process.exit(1);
           }
-
           for (const m of members) {
             if (!m.name || !m.website || !m.gradDate || !m.collegeEmail) {
               console.error('Missing required field on entry:', m);
               process.exit(1);
             }
           }
-
           console.log('Validation passed');
           "
 
