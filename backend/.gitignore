@@ -166,3 +166,5 @@ dist
 !.env.example
 .wrangler/
 .vscode/
+
+.prettierrc
