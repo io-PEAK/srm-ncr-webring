@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badge Generator - SRM^NCR WebRing</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/theme.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <nav class="nav-links">
+                <a href="index.html">Directory</a>
+                <a href="join.html">Join Ring</a>
+                <a href="badge.html" class="active">Badge Gen</a>
+                <a href="enquiry.html">Enquiries</a>
+            </nav>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode">
+                <!-- Sun SVG -->
+                <svg class="theme-icon sun-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <!-- Moon SVG -->
+                <svg class="theme-icon moon-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="page-container">
+        <h1>Member Badge Creator</h1>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px;">
+            Every member site needs an 88x31 px badge. Upload your own or use our editor to generate a dynamic animated GIF badge.
+        </p>
+
+        <div class="badge-creator">
+            <!-- Left Side: Controls & Tabs -->
+            <div class="badge-editor-workspace">
+                <div class="badge-tabs">
+                    <button class="badge-tab-btn active" data-tab="editorTab">Create Animated Badge</button>
+                    <button class="badge-tab-btn" data-tab="uploadTab">Upload My Own</button>
+                </div>
+
+                <!-- Tab 1: Frame Editor -->
+                <div class="badge-pane active" id="editorTab">
+                    <div class="editor-controls">
+                        <div class="control-group">
+                            <label>Text Label (e.g. Name/Initials)
+                                <input type="text" id="badgeText" value="SHIVAM" max-length="12">
+                            </label>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Subtext/Program (e.g. B.Tech)
+                                <input type="text" id="badgeSubtext" value="B.Tech" max-length="16">
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Background Colors (Gradient)
+                                <div class="color-pickers">
+                                    <input type="color" id="bgColor1" value="#111111">
+                                    <input type="color" id="bgColor2" value="#222222">
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Text Color
+                                <input type="color" id="textColor" value="#ffffff" style="width: 50px; height: 40px; padding: 2px;">
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Border / Accent Color
+                                <input type="color" id="accentColor" value="#6fb3ff" style="width: 50px; height: 40px; padding: 2px;">
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Animation Presets
+                                <div class="preset-select">
+                                    <button class="preset-btn active" data-preset="shimmer">Metallic Shimmer</button>
+                                    <button class="preset-btn" data-preset="glitch">Glitch Scan</button>
+                                    <button class="preset-btn" data-preset="typewriter">Typewriter</button>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Frame Manager -->
+                        <div class="frame-strip-container">
+                            <label>Frames (GIF Delay: 100ms per frame)</label>
+                            <div class="frame-strip" id="frameStrip">
+                                <!-- Thumbnails loaded here -->
+                            </div>
+                            <div class="frame-actions">
+                                <button class="frame-btn" id="btnAddFrame">+ Add Frame</button>
+                                <button class="frame-btn" id="btnDeleteFrame" style="color: #ff5555;">Delete Frame</button>
+                                <button class="frame-btn" id="btnClearFrames">Reset All</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Upload Dropzone -->
+                <div class="badge-pane" id="uploadTab">
+                    <div class="dropzone" id="dropzone">
+                        <p>Drag and drop your badge image here (PNG, JPG, or GIF)</p>
+                        <p>or</p>
+                        <button class="frame-btn" style="background-color: var(--accent-color); color: #111;">Choose File</button>
+                        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                    </div>
+                    <div id="uploadFeedback" style="margin-top: 15px; font-size: 0.9rem; text-align: center;"></div>
+                </div>
+            </div>
+
+            <!-- Right Side: Live Canvas Preview -->
+            <div class="badge-preview-panel">
+                <h3>Live Preview</h3>
+                <div class="canvas-container">
+                    <canvas id="badgeCanvas" width="88" height="31"></canvas>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+                    Size: 88 x 31 pixels (standard webring badge format)
+                </p>
+                <button type="submit" id="btnExport" style="width: 100%; max-width: 250px;">
+                    Export Animated GIF
+                </button>
+                <div id="exportStatus" style="font-size: 0.85rem; color: var(--accent-color);"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 SRM<sup>NCR</sup> WebRing. All rights reserved.</p>
+    </footer>
+
+    <script src="js/badge.js"></script>
+</body>
+</html>
