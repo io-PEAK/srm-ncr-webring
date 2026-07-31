@@ -1,7 +1,7 @@
 name: Check Member Sites
 on:
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "0 6 */3 * *"
   workflow_dispatch:
 
 permissions:
@@ -22,26 +22,33 @@ jobs:
           (async () => {
             for (const m of members) {
               try {
-                const res = await fetch(m.website, { method: 'HEAD' });
+                // Fetch with timeout to prevent hanging on down sites
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                
+                const res = await fetch(m.website, { 
+                  method: 'GET',
+                  headers: { 'User-Agent': 'SRMNCR-Webring-Bot/1.0' },
+                  signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
                 if (res.ok) {
+                  // Site is fine: restore and clear warning flags
                   delete m.unreachableSince;
+                  delete m.hidden;
+                  delete m.warningEmailSent;
                 } else {
                   m.unreachableSince = m.unreachableSince || new Date().toISOString();
+                  m.hidden = true;
                 }
-              } catch {
+              } catch (e) {
                 m.unreachableSince = m.unreachableSince || new Date().toISOString();
+                m.hidden = true;
               }
             }
 
-            const now = new Date();
-            const remaining = members.filter(m => {
-              if (!m.unreachableSince) return true;
-              const since = new Date(m.unreachableSince);
-              const daysDown = (now - since) / (1000 * 60 * 60 * 24);
-              return daysDown < 7;
-            });
-
-            fs.writeFileSync('./data/members.json', JSON.stringify(remaining, null, 2));
+            fs.writeFileSync('./data/members.json', JSON.stringify(members, null, 2));
           })();
           "
 
@@ -50,5 +57,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/members.json
-          git diff --staged --quiet || git commit -m "chore: update site reachability status"
+          git diff --staged --quiet || git commit -m "chore: update site health status (3-day check)"
           git push

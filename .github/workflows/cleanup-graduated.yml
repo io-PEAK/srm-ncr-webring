@@ -2,7 +2,7 @@ name: Remove Graduated Members
 on:
   schedule:
     - cron: "0 0 * * *" # runs daily at midnight UTC
-  workflow_dispatch: # lets you manually trigger it too, for testing
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,23 +19,55 @@ jobs:
           const fs = require('fs');
           const members = require('./data/members.json');
 
+          const LOOKUP_SECRET = process.env.LOOKUP_SECRET;
+          const NOTIFY_URL = 'https://backend.srmncrwebring.workers.dev/notify';
+
           const now = new Date();
           const cutoffDays = 30; // 1 month grace period
 
-          const remaining = members.filter(m => {
-            const gradDate = new Date(m.gradDate);
-            const graceEnd = new Date(gradDate);
-            graceEnd.setDate(graceEnd.getDate() + cutoffDays);
-            return now <= graceEnd;
-          });
+          (async () => {
+            const remaining = [];
+            const graduated = [];
 
-          if (remaining.length !== members.length) {
-            fs.writeFileSync('./data/members.json', JSON.stringify(remaining, null, 2));
-            console.log('Removed ' + (members.length - remaining.length) + ' graduated member(s)');
-          } else {
-            console.log('No members to remove');
-          }
+            for (const m of members) {
+              const gradDate = new Date(m.gradDate);
+              const graceEnd = new Date(gradDate);
+              graceEnd.setDate(graceEnd.getDate() + cutoffDays);
+              
+              if (now > graceEnd) {
+                graduated.push(m);
+              } else {
+                remaining.push(m);
+              }
+            }
+
+            if (graduated.length > 0) {
+              console.log('Found ' + graduated.length + ' graduated member(s) to remove.');
+              for (const m of graduated) {
+                console.log('Notifying graduation for:', m.website);
+                try {
+                  await fetch(NOTIFY_URL, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer ' + LOOKUP_SECRET
+                    },
+                    body: JSON.stringify({ site: m.website, type: 'graduation' })
+                  });
+                } catch (err) {
+                  console.error('Failed to notify graduation for ' + m.website + ':', err.message);
+                }
+              }
+              
+              fs.writeFileSync('./data/members.json', JSON.stringify(remaining, null, 2));
+              console.log('Removed graduated members from JSON');
+            } else {
+              console.log('No members to remove');
+            }
+          })();
           "
+        env:
+          LOOKUP_SECRET: ${{ secrets.LOOKUP_SECRET }}
 
       - name: Commit changes if any
         run: |

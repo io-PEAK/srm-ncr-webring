@@ -1,0 +1,125 @@
+name: Recheck Down Sites
+on:
+  schedule:
+    - cron: "0 6 */2 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Recheck down sites and handle notifications
+        run: |
+          node -e "
+          const fs = require('fs');
+          const members = require('./data/members.json');
+
+          const LOOKUP_SECRET = process.env.LOOKUP_SECRET;
+          const NOTIFY_URL = 'https://backend.srmncrwebring.workers.dev/notify';
+
+          (async () => {
+            const now = new Date();
+            const updatedMembers = [];
+
+            for (const m of members) {
+              if (!m.unreachableSince) {
+                // Not down, keep as is
+                updatedMembers.push(m);
+                continue;
+              }
+
+              // Check if site is back up
+              let isUp = false;
+              try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                const res = await fetch(m.website, {
+                  method: 'GET',
+                  headers: { 'User-Agent': 'SRMNCR-Webring-Bot/1.0' },
+                  signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (res.ok) isUp = true;
+              } catch (e) {
+                isUp = false;
+              }
+
+              if (isUp) {
+                console.log('Site is back up:', m.website);
+                delete m.unreachableSince;
+                delete m.hidden;
+                delete m.warningEmailSent;
+                updatedMembers.push(m);
+                continue;
+              }
+
+              // Site is still down. Calculate days down
+              const since = new Date(m.unreachableSince);
+              const daysDown = (now - since) / (1000 * 60 * 60 * 24);
+              console.log(m.website + ' has been down for ' + daysDown.toFixed(1) + ' days.');
+
+              if (daysDown >= 15) {
+                // Hard removal
+                console.log('Day 15 limit reached. Removing member:', m.website);
+                try {
+                  const res = await fetch(NOTIFY_URL, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer ' + LOOKUP_SECRET
+                    },
+                    body: JSON.stringify({ site: m.website, type: 'removal' })
+                  });
+                  console.log('Removal notification response:', res.status);
+                } catch (err) {
+                  console.error('Failed to send removal email:', err.message);
+                }
+                // Do not push to updatedMembers list (permanently removed)
+                continue;
+              }
+
+              if (daysDown >= 10 && !m.warningEmailSent) {
+                // Warning email at day 10
+                console.log('Day 10 limit reached. Sending warning email to:', m.website);
+                try {
+                  const res = await fetch(NOTIFY_URL, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer ' + LOOKUP_SECRET
+                    },
+                    body: JSON.stringify({ site: m.website, type: 'warning' })
+                  });
+                  if (res.ok) {
+                    m.warningEmailSent = true;
+                    console.log('Warning email sent successfully.');
+                  } else {
+                    console.error('Failed to send warning email. Status:', res.status);
+                  }
+                } catch (err) {
+                  console.error('Failed to send warning email:', err.message);
+                }
+              }
+
+              // Keep the member since they are still in the 15-day window
+              updatedMembers.push(m);
+            }
+
+            fs.writeFileSync('./data/members.json', JSON.stringify(updatedMembers, null, 2));
+          })();
+          "
+        env:
+          LOOKUP_SECRET: ${{ secrets.LOOKUP_SECRET }}
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/members.json
+          git diff --staged --quiet || git commit -m "chore: process down site warnings and removals"
+          git push
