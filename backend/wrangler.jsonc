@@ -45,7 +45,8 @@
 	"kv_namespaces": [
 		{
 			"binding": "EMAIL_STORE",
-			"id": "email_store_kv_id"
+			"id": "75e9d6ff89a84944bbaec7b8ee94782d",
+			"remote": true
 		}
 	]
 }
