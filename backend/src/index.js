@@ -1,3 +1,88 @@
+const BADGE_MAX_BYTES = 1024 * 1024; // 1 MB
+
+const BADGE_SIGNATURES = [
+  { ext: 'png', magic: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], type: 'image/png' },
+  { ext: 'gif', magic: [0x47, 0x49, 0x46, 0x38], type: 'image/gif' },
+  { ext: 'jpg', magic: [0xff, 0xd8, 0xff], type: 'image/jpeg' },
+];
+
+// Return { ext, type } when the uploaded bytes start with a known image
+// signature, otherwise null. Extensions are never trusted — magic bytes are.
+function detectBadgeType(bytes) {
+  for (const sig of BADGE_SIGNATURES) {
+    if (bytes.length < sig.magic.length) continue;
+    let ok = true;
+    for (let i = 0; i < sig.magic.length; i++) {
+      if (bytes[i] !== sig.magic[i]) { ok = false; break; }
+    }
+    if (ok) return sig;
+  }
+  return null;
+}
+
+// Deterministic key per site so re-uploading a badge overwrites the same
+// object and the stored URL never has to change (no git churn on updates).
+function badgeKey(site, ext) {
+  const clean = String(site || '').replace(/\/+$/, '').toLowerCase();
+  let h = 2166136261;
+  for (let i = 0; i < clean.length; i++) {
+    h ^= clean.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return 'badges/' + (h >>> 0).toString(36) + '.' + ext;
+}
+
+// Shared body parsing for join/update: accept multipart (file upload) or a
+// plain JSON payload (older clients). Returns { fields, fileBytes }.
+async function parseBadgeForm(request) {
+  const type = (request.headers.get('content-type') || '').toLowerCase();
+  if (type.startsWith('multipart/form-data')) {
+    const form = await request.formData();
+    const fields = {};
+    for (const key of form.keys()) {
+      const value = form.get(key);
+      if (typeof value === 'string') fields[key] = value;
+    }
+    const file = form.get('badgeFile');
+    let fileBytes = null;
+    if (file && typeof file.arrayBuffer === 'function') {
+      fileBytes = new Uint8Array(await file.arrayBuffer());
+    }
+    return { fields, fileBytes };
+  }
+  const fields = await request.json();
+  return { fields, fileBytes: null };
+}
+
+function mimeForType(type) {
+  return type;
+}
+
+// Best-effort geocode of a free-typed location via Nominatim (OSM).
+// Returns { lat, lng, name, state } or null when it can't resolve.
+async function geocodeLocation(location) {
+  try {
+    const q = encodeURIComponent(String(location).trim() + ', India');
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=in&accept-language=en`,
+      { headers: { 'User-Agent': 'srm-ncr-webring-worker/1.0' } }
+    );
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (!body || !body.length) return null;
+    const first = body[0];
+    const parts = (first.display_name || '').split(',').map(s => s.trim()).filter(Boolean);
+    return {
+      lat: parseFloat(first.lat),
+      lng: parseFloat(first.lon),
+      name: parts[0] || String(location).trim(),
+      state: parts.length > 1 ? parts[1] : '',
+    };
+  } catch (err) {
+    return null;
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     // ── CORS HEADERS ────────────────────────────────
@@ -21,6 +106,58 @@ export default {
     };
 
     try {
+      // ── MEMBERS API (public read of data/members.json) ──
+      if (url.pathname === '/api/members') {
+        if (request.method !== 'GET') {
+          return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+        }
+        const ghRes = await fetch(
+          `https://api.github.com/repos/${OWNER}/${REPO}/contents/data/members.json`,
+          { headers: ghHeaders }
+        );
+        if (!ghRes.ok) {
+          return new Response(JSON.stringify({ error: 'Failed to read members.json' }), {
+            status: 502,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+        const file = await ghRes.json();
+        const cleaned = (file.content || '').replace(/\s/g, '');
+        const decoded = atob(cleaned);
+        const members = JSON.parse(decoded);
+        return new Response(JSON.stringify(members), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=60',
+            ...corsHeaders,
+          },
+        });
+      }
+
+      // ── BADGE SERVE (public read of KV) ──────────────
+      if (url.pathname.startsWith('/badges/')) {
+        if (request.method !== 'GET') {
+          return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+        }
+        const key = decodeURIComponent(url.pathname.slice(1));
+        const value = await env.BADGE_STORE.get(key, 'arrayBuffer');
+        if (value === null) {
+          return new Response('Not found', { status: 404, headers: corsHeaders });
+        }
+        const contentType =
+          key.endsWith('.png') ? 'image/png' :
+          key.endsWith('.gif') ? 'image/gif' :
+          key.endsWith('.jpg') ? 'image/jpeg' :
+          'application/octet-stream';
+        return new Response(value, {
+          headers: {
+            'Content-Type': contentType,
+            'Cache-Control': 'public, max-age=3600',
+            ...corsHeaders,
+          },
+        });
+      }
+
       // ── ENQUIRY ROUTE ──────────────────────────────
       if (url.pathname === '/enquiry') {
         if (request.method !== 'POST') {
@@ -180,12 +317,64 @@ export default {
         });
       }
 
+      // ── UPDATE BADGE ROUTE (overwrite KV value for an existing site) ──
+      if (url.pathname === '/update-badge') {
+        if (request.method !== 'POST') {
+          return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+        }
+        const { fields, fileBytes } = await parseBadgeForm(request);
+        const site = (fields.site || '').trim();
+        if (!site) {
+          return new Response(JSON.stringify({ success: false, error: 'Missing site parameter' }), {
+            status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+        if (!fileBytes) {
+          return new Response(JSON.stringify({ success: false, error: 'Missing badgeFile' }), {
+            status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+        const sig = detectBadgeType(fileBytes);
+        if (!sig) {
+          return new Response(JSON.stringify({ success: false, error: 'Badge must be a PNG, GIF, or JPEG image' }), {
+            status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+        if (fileBytes.byteLength > BADGE_MAX_BYTES) {
+          return new Response(JSON.stringify({ success: false, error: 'Badge is too large (max 1 MB)' }), {
+            status: 413, headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+        const key = badgeKey(site, sig.ext);
+        await env.BADGE_STORE.put(key, fileBytes);
+        return new Response(JSON.stringify({ success: true, badgeUrl: url.origin + '/' + key }), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        });
+      }
+
       // ── JOIN ROUTE (Modified to store emails in KV and strip them) ──
       if (request.method !== 'POST') {
         return new Response('Method not allowed', { status: 405, headers: corsHeaders });
       }
 
-      const entry = await request.json();
+      const { fields: rawFields, fileBytes } = await parseBadgeForm(request);
+
+      const entry = {
+        name: (rawFields.name || '').trim(),
+        website: (rawFields.website || '').trim(),
+        program: (rawFields.program || '').trim(),
+        gradDate: (rawFields.gradDate || '').trim(),
+        collegeEmail: (rawFields.collegeEmail || '').trim(),
+        personalEmail: (rawFields.personalEmail || '').trim(),
+        location: (rawFields.location || '').trim(),
+      };
+
+      if (!entry.name || !entry.website || !entry.program || !entry.location) {
+        return new Response(JSON.stringify({ success: false, error: 'Name, website, program, and location are required' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        });
+      }
 
       // Validate presence of emails
       if (!entry.collegeEmail || !entry.personalEmail) {
@@ -193,6 +382,28 @@ export default {
           status: 400,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         });
+      }
+
+      // Badge: prefer an uploaded image (stored in KV), fall back to a plain URL
+      if (fileBytes) {
+        const sig = detectBadgeType(fileBytes);
+        if (!sig) {
+          return new Response(JSON.stringify({ success: false, error: 'Badge must be a PNG, GIF, or JPEG image' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+        if (fileBytes.byteLength > BADGE_MAX_BYTES) {
+          return new Response(JSON.stringify({ success: false, error: 'Badge is too large (max 1 MB)' }), {
+            status: 413,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          });
+        }
+        const key = badgeKey(entry.website, sig.ext);
+        await env.BADGE_STORE.put(key, fileBytes);
+        entry.badge = url.origin + '/' + key;
+      } else if (rawFields.badge && typeof rawFields.badge === 'string') {
+        entry.badge = rawFields.badge.trim();
       }
 
       // Store private email mapping in KV
@@ -247,7 +458,37 @@ export default {
         }),
       });
 
-      // 4. Open the PR
+      // 4. Add the member's city to data/cities.json when it's new
+      const cityKey = entry.location.toLowerCase().trim();
+      if (cityKey) {
+        try {
+          const citiesRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/cities.json`, { headers: ghHeaders });
+          if (citiesRes.ok) {
+            const citiesFile = await citiesRes.json();
+            const cities = JSON.parse(atob(citiesFile.content.replace(/\s/g, '')));
+            if (!cities[cityKey]) {
+              const geo = await geocodeLocation(entry.location);
+              if (geo) {
+                cities[cityKey] = geo;
+                await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/data/cities.json`, {
+                  method: 'PUT',
+                  headers: ghHeaders,
+                  body: JSON.stringify({
+                    message: `Add ${geo.name} to cities`,
+                    content: btoa(JSON.stringify(cities, null, 2)),
+                    sha: citiesFile.sha,
+                    branch: BRANCH_NAME,
+                  }),
+                });
+              }
+            }
+          }
+        } catch (err) {
+          // cities update is best-effort; the member entry still succeeds
+        }
+      }
+
+      // 5. Open the PR
       const prRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/pulls`, {
         method: 'POST',
         headers: ghHeaders,

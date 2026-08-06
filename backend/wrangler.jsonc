@@ -47,6 +47,11 @@
 			"binding": "EMAIL_STORE",
 			"id": "75e9d6ff89a84944bbaec7b8ee94782d",
 			"remote": true
+		},
+		{
+			"binding": "BADGE_STORE",
+			"id": "c78676a150994703887c619bbbeda760",
+			"remote": true
 		}
 	]
 }
