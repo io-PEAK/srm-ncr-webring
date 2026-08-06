@@ -1,16 +1,24 @@
-document.addEventListener('DOMContentLoaded', () => {
+function init() {
+    // Idempotent guard — init() may be called both by DOMContentLoaded (when
+    // badge DOM is present in the page directly, e.g. badge.html) and by
+    // js/badge-panel.js (when badge DOM is mounted into a cube panel).
+    if (window.__SRMBadgeInited) return;
+    var canvas = document.getElementById('badgeCanvas');
+    if (!canvas) return; // No badge DOM yet — let badge-panel.js mount and call us.
+    window.__SRMBadgeInited = true;
+
     // Tab switching
     const tabs = document.querySelectorAll('.badge-tab-btn');
     const panes = document.querySelectorAll('.badge-pane');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            panes.forEach(p => p.classList.remove('active'));
+            tabs.forEach(t => t.classList.remove('is-active'));
+            panes.forEach(p => p.classList.remove('is-active'));
 
-            tab.classList.add('active');
+            tab.classList.add('is-active');
             const targetPane = document.getElementById(tab.dataset.tab);
-            if (targetPane) targetPane.classList.add('active');
+            if (targetPane) targetPane.classList.add('is-active');
         });
     });
 
@@ -241,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
             thumbCtx.putImageData(frame, 0, 0);
 
             const container = document.createElement('div');
-            container.className = `frame-thumbnail ${index === currentFrameIndex ? 'active' : ''}`;
+            container.className = `frame-thumbnail ${index === currentFrameIndex ? 'is-active' : ''}`;
             container.dataset.index = index;
             container.appendChild(thumb);
 
@@ -266,11 +274,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const thumbs = frameStrip.querySelectorAll('.frame-thumbnail');
         thumbs.forEach((t, index) => {
             if (index === currentFrameIndex) {
-                t.classList.add('active');
+                t.classList.add('is-active');
                 // Scroll thumbnail into view if needed
                 t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
             } else {
-                t.classList.remove('active');
+                t.classList.remove('is-active');
             }
         });
     }
@@ -278,8 +286,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Preset selection change
     presetButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            presetButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            presetButtons.forEach(b => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
             selectedPreset = btn.dataset.preset;
             generatePresetFrames();
         });
@@ -400,4 +408,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize Editor on start
     generatePresetFrames();
-});
+}
+
+// Exposed for late-mount (e.g. cube panel injection by js/badge-panel.js).
+window.__SRMBadgeInit = init;
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
