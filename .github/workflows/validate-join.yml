@@ -1,6 +1,8 @@
 # Validates data/members.json whenever a pull request touches it.
 # Fails on duplicate site URLs or missing required fields, then
-# auto-merges the valid PR and deletes its branch.
+# auto-merges the valid PR. A separate cleanup job waits for the
+# merge to actually complete before deleting the PR's branch
+# (gh pr merge --auto only enables auto-merge; it does not wait).
 name: Validate Join PR
 on:
   pull_request:
@@ -43,8 +45,33 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Delete branch after merge
-        if: success()
-        run: gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${{ github.head_ref }}"
+  # Runs after the validate job, by which point the required "validate"
+  # check is successful, so GitHub can finish the auto-merge while we poll.
+  cleanup:
+    needs: validate
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for merge and delete branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+
+          merged=0
+          for i in $(seq 1 36); do
+            state=$(gh pr view "$PR" --json state --jq .state)
+            if [[ "$state" == "MERGED" ]]; then
+              merged=1
+              break
+            fi
+            sleep 5
+          done
+
+          if [[ "$merged" != "1" ]]; then
+            echo "::error::PR #$PR did not merge within 3 minutes; branch kept."
+            exit 1
+          fi
+
+          echo "PR #$PR merged — deleting branch ${{ github.head_ref }}"
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${{ github.head_ref }}"
