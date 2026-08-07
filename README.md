@@ -2,7 +2,7 @@
 
 # SRM NCR WebRing
 
-A public webring for SRM University NCR campus students to showcase portfolios, blogs, and personal projects — connected in a ring, mapped across India, and kept alive by automation.
+A public webring for SRM University NCR campus students to showcase portfolios, blogs, and personal projects connected in a ring, mapped across India, and kept alive by automation.
 
 <img src="images/screenshots/splash.png" alt="SRM NCR WebRing splash panel — hero with the India map" width="760">
 
@@ -19,38 +19,34 @@ A public webring for SRM University NCR campus students to showcase portfolios, 
 
 </div>
 
-## <img src="images/icons/screenshots.svg" width="20" height="20" align="center"> Screenshots
+**<img src="images/icons/screenshots.svg" width="20" height="20" valign="middle"/> &nbsp; Screenshots**<br/>
+
+|                                                                                                                                                             |                                                                                                                       |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------: |
+| <img src="images/screenshots/directory.png" alt="Searchable member directory with interactive ring map"> <br> _Searchable directory & interactive ring map_ |   <img src="images/screenshots/badge.png" alt="88×31 animated GIF badge generator"> <br> _Animated badge generator_   |
+|                       <img src="images/screenshots/join.png" alt="Join the ring form"> <br> _Join / update form with widget snippet_                        | <img src="images/screenshots/splash.png" alt="Splash panel with animated India map"> <br> _Animated India map splash_ |
+
+**<img src="images/icons/features.svg" width="20" height="20" valign="middle"/> &nbsp; Features**<br/>
 
 | | |
 |:---:|:---:|
-| <img src="images/screenshots/directory.png" alt="Searchable member directory with interactive ring map"> <br> _Searchable directory & interactive ring map_ | <img src="images/screenshots/badge.png" alt="88×31 animated GIF badge generator"> <br> _Animated badge generator_ |
-| <img src="images/screenshots/join.png" alt="Join the ring form"> <br> _Join / update form with widget snippet_ | <img src="images/screenshots/splash.png" alt="Splash panel with animated India map"> <br> _Animated India map splash_ |
+| **<img src="images/icons/carousel.svg" width="20" height="20" valign="middle"/> &nbsp; 3D panel carousel**<br/>A full-screen CSS 3D ring of five panels (splash, about, directory, explorer, join) navigated by dots, drag/swipe, and keyboard. Panels are addressable by hash for deep links. | **<img src="images/icons/map.svg" width="20" height="20" valign="middle"/> &nbsp; Animated India map**<br/>Every member is pinned onto an India SVG with animated connection lines. City coordinates are pre-resolved into `data/cities.json`. |
+| **<img src="images/icons/search.svg" width="20" height="20" valign="middle"/> &nbsp; Searchable directory**<br/>A paginated member table with live search, kept in sync with an interactive ring map you can pan and zoom. | **<img src="images/icons/arrows.svg" width="20" height="20" valign="middle"/> &nbsp; Live site explorer**<br/>Browse member sites in an embedded live preview with a "click to interact" overlay and prev / next / random navigation. |
+| **<img src="images/icons/badge.svg" width="20" height="20" valign="middle"/> &nbsp; Animated badge generator**<br/>An 88×31 GIF editor with metallic shimmer, glitch scan, and typewriter presets, a custom frame strip, and per-frame delay. | **<img src="images/icons/dataflow.svg" width="20" height="20" valign="middle"/> &nbsp; Automated onboarding**<br/>The join form hits a Worker that opens a pull request; GitHub Actions validates and auto-merges it. Rejoining with the same college email updates your existing entry instead of duplicating it. |
+| **<img src="images/icons/watch.svg" width="20" height="20" valign="middle"/> &nbsp; Automated health monitoring**<br/>Scheduled workflows probe every member site, hide down members, email warnings, and remove entries after the 15-day grace period. | **<img src="images/icons/lock.svg" width="20" height="20" valign="middle"/> &nbsp; Privacy by design**<br/>Personal emails are stored only in Cloudflare KV and are stripped from the public `members.json`. Uploads are validated by magic bytes, never by file extension. |
 
-## <img src="images/icons/features.svg" width="20" height="20" align="center"> Features
+**<img src="images/icons/techstack.svg" width="20" height="20" valign="middle"/> &nbsp; Tech Stack**<br/>
 
-| | |
-|:---:|:---|
-| <img src="images/icons/carousel.svg" width="16" height="16"> | **3D panel carousel** — A full-screen CSS 3D ring of five panels (splash, about, directory, explorer, join) navigated by dots, drag/swipe, and keyboard. Panels are addressable by hash for deep links. |
-| <img src="images/icons/map.svg" width="16" height="16"> | **Animated India map** — Every member is pinned onto an India SVG with animated connection lines. City coordinates are pre-resolved into `data/cities.json`. |
-| <img src="images/icons/search.svg" width="16" height="16"> | **Searchable directory** — A paginated member table with live search, kept in sync with an interactive ring map you can pan and zoom. |
-| <img src="images/icons/arrows.svg" width="16" height="16"> | **Live site explorer** — Browse member sites in an embedded live preview with a "click to interact" overlay and prev / next / random navigation. |
-| <img src="images/icons/badge.svg" width="16" height="16"> | **Animated badge generator** — An 88×31 GIF editor with metallic shimmer, glitch scan, and typewriter presets, a custom frame strip, and per-frame delay. |
-| <img src="images/icons/dataflow.svg" width="16" height="16"> | **Automated onboarding** — The join form hits a Worker that opens a pull request; GitHub Actions validates and auto-merges it. Rejoining with the same college email updates your existing entry instead of duplicating it. |
-| <img src="images/icons/watch.svg" width="16" height="16"> | **Automated health monitoring** — Scheduled workflows probe every member site, hide down members, email warnings, and remove entries after the 15-day grace period. |
-| <img src="images/icons/lock.svg" width="16" height="16"> | **Privacy by design** — Personal emails are stored only in Cloudflare KV and are stripped from the public `members.json`. Uploads are validated by magic bytes, never by file extension. |
-
-## <img src="images/icons/techstack.svg" width="20" height="20" align="center"> Tech Stack
-
-| Layer | Technology |
-|:---|:---|
+| Layer        | Technology                                                                                                                                 |
+| :----------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
 | **Frontend** | Static HTML5, CSS3 (custom properties + `prefers-color-scheme` dark mode, 3D transforms), vanilla JavaScript — no build step, no framework |
-| **Fonts** | Space Grotesk & Space Mono (self-hosted woff2), Minecraft (bundled locally) for headings |
-| **Backend** | Cloudflare Workers (Wrangler 4, `nodejs_compat`), Cloudflare KV for email mappings and uploaded badges |
-| **APIs** | GitHub REST API (pull requests, issues, labels, file contents), Brevo SMTP (email), Nominatim/OpenStreetMap (geocoding) |
-| **CI / CD** | GitHub Actions — join-PR validation, site health checks, graduated-member cleanup |
-| **Testing** | Vitest with the `@cloudflare/vitest-pool-workers` pool (tests run in a real Workers runtime) |
+| **Fonts**    | Space Grotesk & Space Mono (self-hosted woff2), Minecraft (bundled locally) for headings                                                   |
+| **Backend**  | Cloudflare Workers (Wrangler 4, `nodejs_compat`), Cloudflare KV for email mappings and uploaded badges                                     |
+| **APIs**     | GitHub REST API (pull requests, issues, labels, file contents), Brevo SMTP (email), Nominatim/OpenStreetMap (geocoding)                    |
+| **CI / CD**  | GitHub Actions — join-PR validation, site health checks, graduated-member cleanup                                                          |
+| **Testing**  | Vitest with the `@cloudflare/vitest-pool-workers` pool (tests run in a real Workers runtime)                                               |
 
-## <img src="images/icons/architecture.svg" width="20" height="20" align="center"> System Architecture
+**<img src="images/icons/architecture.svg" width="20" height="20" valign="middle"/> &nbsp; System Architecture**<br/>
 
 ```
                 ┌────────────────────────────────────────────────────────┐
@@ -62,13 +58,13 @@ A public webring for SRM University NCR campus students to showcase portfolios, 
                                 ▼                    │  data/       │
                 ┌────────────────────────────┐       │  members.json│
                 │    Cloudflare Worker       │       │  cities.json │  ◄── source of
-                │   backend.srmncr…workers.dev│       └──────┬───────┘      truth (repo)
-                └──────┬─────────┬──────────┘              │
-                       │ KV      │ REST                    │ GitHub REST API
-              EMAIL_STORE      ├──────────────────────────►│ (PRs / issues / labels /
-              BADGE_STORE      │                           │  contents)
-                               │
-                               ▼
+                │  backend.srmncr…workers.dev│       └──────┬───────┘      truth (repo)
+                └──────┬─────────┬───────────┘              │
+                       │ KV      │ REST                     │ GitHub REST API
+              EMAIL_STORE        ├────────────────────────► │ (PRs / issues / labels /
+              BADGE_STORE        │                          │  contents)
+                                 │
+                                 ▼
                 ┌────────────────────────────┐
                 │        GitHub Actions      │   cron health checks,
                 │   validate-join · check-   │   down-site rechecks,
@@ -83,7 +79,7 @@ A public webring for SRM University NCR campus students to showcase portfolios, 
                 └────────────────────────────┘
 ```
 
-## <img src="images/icons/dataflow.svg" width="20" height="20" align="center"> Data Flow
+**<img src="images/icons/dataflow.svg" width="20" height="20" valign="middle"/> &nbsp; Data Flow**<br/>
 
 **Joining / updating a member**
 
@@ -101,7 +97,7 @@ Member → join.html (multipart POST) → Worker
 
 **Site health** — A `check-sites` workflow probes every site every 3 days and flags unreachable members (`hidden` + `unreachableSince`). A `recheck-down-sites` workflow restores sites that come back, emails a warning at 10 days, and removes the entry at 15 days via the Worker's `/notify` route (Brevo). A `cleanup-graduated` workflow removes members past their graduation date + 30-day grace.
 
-## <img src="images/icons/structure.svg" width="20" height="20" align="center"> Project Structure
+**<img src="images/icons/structure.svg" width="20" height="20" valign="middle"/> &nbsp; Project Structure**<br/>
 
 ```
 .
@@ -142,30 +138,30 @@ Member → join.html (multipart POST) → Worker
 └── .github/workflows/      # validate-join · check-sites · recheck-down-sites · cleanup-graduated
 ```
 
-## <img src="images/icons/api.svg" width="20" height="20" align="center"> API Reference
+**<img src="images/icons/api.svg" width="20" height="20" valign="middle"/> &nbsp; API Reference**<br/>
 
 Base URL: `https://backend.srmncrwebring.workers.dev`
 
-| Method | Endpoint | Auth | Description |
-|:---|:---|:---|:---|
-| `GET` | `/api/members` | Public | Read the active member list from `data/members.json` (GitHub API), cached 60 s |
-| `GET` | `/badges/{key}` | Public | Serve an uploaded member badge from KV (png / gif / jpg) |
-| `POST` | `/join` | Public | Join/update request: multipart form (badge file) or JSON. Opens a PR |
-| `POST` | `/enquiry` | Public | Create a labeled GitHub issue from the enquiry form |
-| `GET` | `/email-lookup?site=` | `Bearer LOOKUP_SECRET` | Return the stored email record for a site (used by workflows) |
-| `POST` | `/notify` | `Bearer LOOKUP_SECRET` | Send a Brevo email (`warning`, `removal`, or `graduation`) for a site |
-| `POST` | `/update-badge` | Public | Overwrite a site's badge in KV from a multipart upload |
+| Method | Endpoint              | Auth                   | Description                                                                    |
+| :----- | :-------------------- | :--------------------- | :----------------------------------------------------------------------------- |
+| `GET`  | `/api/members`        | Public                 | Read the active member list from `data/members.json` (GitHub API), cached 60 s |
+| `GET`  | `/badges/{key}`       | Public                 | Serve an uploaded member badge from KV (png / gif / jpg)                       |
+| `POST` | `/join`               | Public                 | Join/update request: multipart form (badge file) or JSON. Opens a PR           |
+| `POST` | `/enquiry`            | Public                 | Create a labeled GitHub issue from the enquiry form                            |
+| `GET`  | `/email-lookup?site=` | `Bearer LOOKUP_SECRET` | Return the stored email record for a site (used by workflows)                  |
+| `POST` | `/notify`             | `Bearer LOOKUP_SECRET` | Send a Brevo email (`warning`, `removal`, or `graduation`) for a site          |
+| `POST` | `/update-badge`       | Public                 | Overwrite a site's badge in KV from a multipart upload                         |
 
 ### Join request fields (`POST /join`)
 
-| Field | Notes |
-|:---|:---|
-| `name`, `website`, `program`, `location` | Required; `website` must not already belong to another member |
-| `gradDate` | Stored as `DD/MM/YYYY`; validated in the UI |
-| `collegeEmail`, `personalEmail` | Required but **never committed** — stored in KV under `site → {name, collegeEmail, personalEmail}` and `college:<email> → {website}` |
-| `badgeFile` | Optional image (PNG/GIF/JPEG), magic-byte validated, ≤ 1 MB, stored at `badges/<fnv1a-hash>.<ext>` |
+| Field                                    | Notes                                                                                                                                |
+| :--------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| `name`, `website`, `program`, `location` | Required; `website` must not already belong to another member                                                                        |
+| `gradDate`                               | Stored as `DD/MM/YYYY`; validated in the UI                                                                                          |
+| `collegeEmail`, `personalEmail`          | Required but **never committed** — stored in KV under `site → {name, collegeEmail, personalEmail}` and `college:<email> → {website}` |
+| `badgeFile`                              | Optional image (PNG/GIF/JPEG), magic-byte validated, ≤ 1 MB, stored at `badges/<fnv1a-hash>.<ext>`                                   |
 
-## <img src="images/icons/start.svg" width="20" height="20" align="center"> Getting Started
+**<img src="images/icons/start.svg" width="20" height="20" valign="middle"/> &nbsp; Getting Started**<br/>
 
 ### Prerequisites
 
@@ -216,33 +212,29 @@ Optional Worker variable `SENDER_EMAIL` (defaults to `webring@srmncr.edu.in`) se
 
 `GITHUB_TOKEN` (or a PAT with repo scope) and `LOOKUP_SECRET` are needed by the workflows that validate join PRs and send down-site / graduation emails. Add them under **Settings → Secrets and variables → Actions**.
 
-## <img src="images/icons/watch.svg" width="20" height="20" align="center"> Automated Maintenance
+**<img src="images/icons/watch.svg" width="20" height="20" valign="middle"/> &nbsp; Automated Maintenance**<br/>
 
-| Workflow | Trigger | Behavior |
-|:---|:---|:---|
-| **Validate Join PR** | PR touching `data/members.json` | Fails on duplicate site URLs or missing required fields; auto-merges and deletes the branch on success |
-| **Check Member Sites** | `0 6 */3 * *` + manual | Probes every site (8 s timeout); restores up sites, flags unreachable ones `hidden` |
-| **Recheck Down Sites** | `0 6 */2 * *` + manual | Restores recovered sites; emails a warning at day 10; removes the entry at day 15 |
-| **Remove Graduated Members** | `0 0 * * *` + manual | Removes members past `gradDate` + 30-day grace and sends a graduation email |
+| Workflow                     | Trigger                         | Behavior                                                                                               |
+| :--------------------------- | :------------------------------ | :----------------------------------------------------------------------------------------------------- |
+| **Validate Join PR**         | PR touching `data/members.json` | Fails on duplicate site URLs or missing required fields; auto-merges and deletes the branch on success |
+| **Check Member Sites**       | `0 6 */3 * *` + manual          | Probes every site (8 s timeout); restores up sites, flags unreachable ones `hidden`                    |
+| **Recheck Down Sites**       | `0 6 */2 * *` + manual          | Restores recovered sites; emails a warning at day 10; removes the entry at day 15                      |
+| **Remove Graduated Members** | `0 0 * * *` + manual            | Removes members past `gradDate` + 30-day grace and sends a graduation email                            |
 
-## <img src="images/icons/security.svg" width="20" height="20" align="center"> Security
+**<img src="images/icons/security.svg" width="20" height="20" valign="middle"/> &nbsp; Security**<br/>
 
 - **Email privacy** — college and personal emails live only in Cloudflare KV. They are deleted from the join payload before it is committed to the repository.
 - **Upload validation** — badge files are checked against known PNG/GIF/JPEG magic bytes (extension is never trusted) and capped at 1 MB.
 - **Secret routes** — `/email-lookup` and `/notify` require a `Bearer LOOKUP_SECRET` header; tokens and API keys are stored as Wrangler/Workflow secrets, not in source.
 - **Site-ownership checks** — a join request cannot claim a URL already owned by another member; rejoining by college email updates only the existing entry.
 
-## <img src="images/icons/college.svg" width="20" height="20" align="center"> Testing
+**<img src="images/icons/check.svg" width="20" height="20" valign="middle"/> &nbsp; Testing**<br/>
 
 ```bash
 cd backend
 npm test
 ```
 
-The suite (9 tests in `backend/test/index.spec.js`) runs through `@cloudflare/vitest-pool-workers`, so each test executes against the real Workers runtime with the `wrangler.jsonc` bindings — including the KV namespaces and the GitHub/geocode fetches, which are mocked per test.
+The suite (9 tests in `backend/test/index.spec.js`) runs through `@cloudflare/vitest-pool-workers`, so each test executes against the real Workers runtime with the `wrangler.jsonc` bindings, including the KV namespaces and the GitHub/geocode fetches, which are mocked per test.
 
 ---
-
-<div align="center">
-  <sub>Built by SRM NCR students, for SRM NCR students. Add your site and join the ring.</sub>
-</div>
