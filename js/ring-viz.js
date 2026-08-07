@@ -1,3 +1,8 @@
+// ============================================================
+// js/ring-viz.js — SRM NCR WebRing directory ring visualization
+// Renders member nodes on a circle with links in ring order and
+// exposes window.SRMViz (highlight/hover) plus pan & zoom.
+// ============================================================
 /* SRM NCR Webring — directory ring visualization (no dependencies).
  *
  * Renders member nodes on a circle inside #ring-viz, links consecutive members
@@ -27,6 +32,7 @@
     return window.SRMData.key(m.website);
   }
 
+  // ── Build the ring SVG (ghost path, links, nodes) ──
   function place(members) {
     var wrap = document.getElementById('ring-viz');
     if (!wrap || !members.length) return;
@@ -45,6 +51,7 @@
     var radius = n > 1 ? R : 20;
 
     var pos = members.map(function (_, i) {
+      // Start at -90° so node 0 sits at the top of the ring.
       var a = -Math.PI / 2 + (2 * Math.PI * i) / n;
       return { x: cx + radius * Math.cos(a), y: cy + radius * Math.sin(a) };
     });
@@ -104,6 +111,7 @@
       var label = document.createElementNS(NS, 'text');
       label.setAttribute('class', 'ring-node-label');
       label.setAttribute('x', pos[i].x);
+      // Alternate labels above/below the ring to stop neighbours colliding.
       label.setAttribute('y', pos[i].y + (i % 2 === 0 ? 30 : -20));
       label.textContent = m.name || '';
 
@@ -226,6 +234,7 @@
     if (zoomReset) zoomReset.addEventListener('click', resetView);
   }
 
+  // ── Highlight state → node/link classes ──
   function apply() {
     if (!container) return;
     var keys = searchKeys.length ? searchKeys : (hoverKey ? [hoverKey] : []);
@@ -258,6 +267,7 @@
     apply();
   }
 
+  // ── Public API (consumed by js/directory.js) ──
   window.SRMViz = {
     highlight: highlight,
     setHover: setHover,

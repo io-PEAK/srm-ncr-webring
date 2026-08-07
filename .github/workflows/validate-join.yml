@@ -1,3 +1,6 @@
+# Validates data/members.json whenever a pull request touches it.
+# Fails on duplicate site URLs or missing required fields, then
+# auto-merges the valid PR and deletes its branch.
 name: Validate Join PR
 on:
   pull_request:

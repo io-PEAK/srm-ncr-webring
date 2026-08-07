@@ -1,22 +1,29 @@
+<!-- ============================================================
+     enquiry.html — SRM NCR WebRing enquiry form
+     Subpage for reporting broken links, requesting removals,
+     graduation-date corrections, and badge changes; validated
+     by js/enquiry.js with status shown in #output.
+     ============================================================ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#AF272F">
-    <title>Enquire — SRM NCR WebRing</title>
+    <title>Enquire | SRM NCR WebRing</title>
     <link rel="icon" href="img/tree_yellow.png" type="image/png">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="subpage">
     <a href="index.html" class="skip-link">Back to ring</a>
 
-    <main class="panel-inner">
+    <main class="panel-inner enquiry-inner">
         <a href="index.html" class="back-link">&larr; Back to ring</a>
 
         <h1>Enquire<span class="h1-accent">.</span></h1>
         <p>Report a broken link, ask for a removal, fix a date, or send anything else our way.</p>
 
+        <!-- ── Enquiry form; submitted and validated by js/enquiry.js ── -->
         <form id="enquiryForm" class="join-form" novalidate>
             <label>
                 Name
@@ -48,6 +55,7 @@
             <button type="submit" class="join-submit" id="enquirySubmit">Submit request</button>
         </form>
 
+        <!-- Submission status (populated by js/enquiry.js) -->
         <div id="output" class="join-status" role="status"></div>
     </main>
 

@@ -1,3 +1,8 @@
+// ============================================================
+// js/directory.js — SRM NCR WebRing directory panel
+// Renders the member list (desktop rows, mobile cards), wires the
+// search filter, and syncs highlights with the ring viz (SRMViz).
+// ============================================================
 /* SRM NCR Webring — directory panel.
  *
  * Renders the member list (desktop: paginated rows; mobile: horizontal cards),
@@ -16,6 +21,7 @@
   var query = '';
   var isMobile = window.matchMedia(MOBILE_QUERY).matches;
 
+  // ── Filtering & key helpers ──
   function domain(u) {
     return window.SRMData.hostname(u);
   }
@@ -30,6 +36,7 @@
     return hay.indexOf(query) !== -1;
   }
 
+  // ── Row rendering ──
   function buildRow(m, isMatch) {
     var a = document.createElement('a');
     a.className = 'directory-row' + (isMatch ? ' is-search-match' : '');
@@ -95,6 +102,7 @@
     return found;
   }
 
+  // ── Render: rows, pagination, viz highlight ──
   function render() {
     var filtered = members.filter(matches);
     var matchKeys = query
@@ -194,6 +202,7 @@
     cardNext.disabled = listEl.scrollLeft >= maxScroll - 1;
   }
 
+  // ── Init: wire controls, load members ──
   function init() {
     listEl = document.querySelector('.directory-list');
     searchEl = document.getElementById('directory-search-input');

@@ -1,3 +1,8 @@
+// ============================================================
+// js/ring.js — SRM NCR WebRing navigation widget
+// Runs on member sites: parses #site?nav=prev|next from the hash
+// and redirects to the previous/next active member in the ring.
+// ============================================================
 function handleRingNavigation() {
     const rawHash = window.location.hash.slice(1);
 
@@ -8,6 +13,7 @@ function handleRingNavigation() {
     const params = new URLSearchParams(queryString);
     const direction = params.get('nav');
 
+    // ── Resolve the ring neighbour and redirect ──
     // Fetch members relative to root page containing the widget handler
     fetch('data/members.json')
         .then(response => response.json())

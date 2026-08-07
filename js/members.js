@@ -1,3 +1,9 @@
+// ============================================================
+// js/members.js — SRM NCR WebRing shared member loader
+// Fetches the active member list from the backend worker with a
+// data/members.json fallback and exposes it to every panel as
+// window.SRMData.load().
+// ============================================================
 /* SRM NCR Webring — shared member loader.
  *
  * Fetches the active member list once from /api/members (Cloudflare Worker)
@@ -9,6 +15,7 @@ window.SRMData = (function () {
 
   var cache = null;
 
+  // ── Fetch members once (cached promise) ──
   function load() {
     if (cache) return cache;
     cache = fetch('/api/members', { credentials: 'omit' })
@@ -20,12 +27,14 @@ window.SRMData = (function () {
         return fetch('data/members.json').then(function (r) { return r.json(); });
       })
       .then(function (members) {
+        // Drop hidden/unreachable members so every panel shows the active ring only.
         return (members || []).filter(function (m) { return !m.hidden && !m.unreachableSince; });
       })
       .catch(function () { return []; });
     return cache;
   }
 
+  // ── URL helpers used across panels ──
   function hostname(url) {
     try { return new URL(url).hostname.replace(/^www\./, ''); }
     catch (e) { return url; }

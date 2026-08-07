@@ -1,3 +1,9 @@
+// ============================================================
+// js/join.js — SRM NCR WebRing join page
+// Handles the join/update form: city autocomplete, badge upload,
+// custom validation, and the multipart POST to the backend worker
+// that opens a pull request for the new member.
+// ============================================================
 (function () {
   'use strict';
 
@@ -85,6 +91,7 @@
       item.dataset.key = r.key;
       item.appendChild(name);
       item.appendChild(state);
+      // mousedown (with preventDefault) beats input blur so the selection registers.
       item.addEventListener('mousedown', function (e) {
         e.preventDefault();
         selectCity(r);
@@ -152,6 +159,7 @@
     });
   }
 
+  // Legacy clipboard fallback for browsers without navigator.clipboard.
   function fallbackCopy(text) {
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -171,9 +179,11 @@
     attachCopy(widgetCopyBtn, widgetCode);
   }
 
+  // ── Badge upload preview ──
   if (badgeInput && badgePreview) {
     badgeInput.addEventListener('change', function () {
       const file = badgeInput.files && badgeInput.files[0];
+      badgeInput.classList.toggle('has-file', !!file);
       if (file && file.type.startsWith('image/')) {
         badgePreview.src = URL.createObjectURL(file);
         badgePreview.classList.remove('is-empty');
@@ -267,7 +277,7 @@
   }
 
   function setFieldError(input, message) {
-    const label = input.closest('label');
+    const label = input.closest('label') || input.closest('.join-badge-field');
     input.classList.toggle('is-invalid', !!message);
     input.setAttribute('aria-invalid', message ? 'true' : 'false');
     let errEl = label.querySelector('.field-error');
@@ -343,6 +353,7 @@
     }
   });
 
+  // ── Submit: multipart POST to the backend worker ──
   form.addEventListener('submit', function (event) {
     event.preventDefault();
 

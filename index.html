@@ -1,3 +1,9 @@
+<!-- ============================================================
+     index.html — SRM NCR WebRing landing page
+     Full-screen 3D panel carousel: animated India map splash,
+     about panel, searchable member directory with ring map and
+     site explorer, and a join CTA with live member count.
+     ============================================================ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +19,7 @@
 <body>
     <a href="#ring" class="skip-link">Skip to directory</a>
 
+    <!-- ── The ring: 5 full-screen panels in a 3D carousel, navigated by the dots below and the on-map widget ── -->
     <div id="ring" class="ring" data-panel-count="5" data-directory-index="2">
         <div class="ring-track">
 
@@ -27,6 +34,7 @@
                         <img src="img/srm-logo.webp" alt="SRM Institute of Science and Technology" class="hero-flag">
                     </header>
 
+                    <!-- Splash map: India SVG; member dots and animated ring lines are drawn by js/splash-map.js -->
                     <div class="splash-map-wrap">
                         <svg class="splash-map" viewBox="0 0 1000 1100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Map of India with animated webring">
                                                     <g class="splash-states" aria-hidden="true">
@@ -253,21 +261,15 @@
                         <h2 class="about-headline poster-text">What is a<br />Webring?</h2>
                         <div class="about-lead">
                             <p>
-                                Before recommendation engines, the web was a patchwork of
-                                handmade links. A webring works the old way: every site in it
-                                points to the next one, so you can hop from page to page in a
-                                loop and keep discovering for as long as you like.
+                                Before recommendation engines, the web was a mix of handmade links. A webring works this way: every site points to the next one, allowing you to hop from page to page in a loop and keep discovering for as long as you want.
+
                             </p>
                             <p>
-                                We started this ring for the SRM NCR community — students
-                                building portfolios, writing blogs, and shipping side projects
-                                while juggling classes and submissions. One site leads to
-                                another, and before you know it, you've met half the campus.
+                                We started this ring for the SRM NCR community, which includes students building portfolios, writing blogs, and working on side projects while managing classes and assignments. One site connects to another, and before you know it, you've met half the campus. 
+
                             </p>
                             <p>
-                                Run by students, for students. Open, volunteer, and free of
-                                trackers, timelines, and clickbait — just real links between
-                                real people.
+                                This is run by students for students. It is open, volunteer-based, and free of trackers, timelines, and clickbait; just real links between real people.
                             </p>
                         </div>
                     </div>
@@ -420,11 +422,19 @@
         </div>
     </div>
 
-    <!-- Transparent click overlay for the Join button, outside #ring's perspective
-         context so Chrome uses 2D hit-testing (immune to preserve-3d routing bugs). -->
+    <!-- Transparent click overlays for the Join button and info button, outside
+         #ring's perspective context so Chrome uses 2D hit-testing (immune to
+         preserve-3d routing bugs). -->
     <a
         id="join-link-overlay"
         href="join.html"
+        aria-hidden="true"
+        tabindex="-1"
+        style="position:fixed;display:none;z-index:150;cursor:pointer;"
+    ></a>
+    <a
+        id="info-link-overlay"
+        href="enquiry.html"
         aria-hidden="true"
         tabindex="-1"
         style="position:fixed;display:none;z-index:150;cursor:pointer;"
@@ -439,6 +449,7 @@
         <button class="ring-dot" data-dot="4" aria-label="Go to Join"></button>
     </nav>
 
+    <!-- ── Scripts: carousel (splash.js), member data (members.js), map animation (splash-map.js), and directory / ring-map / preview logic ── -->
     <script src="js/splash.js" defer></script>
     <script src="js/members.js" defer></script>
     <script src="js/splash-map.js" defer></script>

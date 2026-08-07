@@ -1,3 +1,10 @@
+/* ============================================================
+   css/style.css — SRM NCR WebRing shared stylesheet
+   Used by the badge, join and enquiry subpages: page layout,
+   forms, the badge editor/preview, and the embeddable widget
+   snippet. Themeable via the --* custom properties (light +
+   dark mode in :root / @media prefers-color-scheme).
+   ============================================================ */
 @import url('../fonts.css');
 
 * {
@@ -20,6 +27,8 @@
   --fg-on-accent: #fff;
   --font-body: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Space Mono', ui-monospace, monospace;
+  --font-display: 'Minecraft', sans-serif;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23706b66' stroke-width='2'/%3E%3C/svg%3E");
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,6 +44,7 @@
     --accent-2: #c8a008;
     --panel-alt: #1a1918;
     --fg-on-accent: #fff;
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23928c86' stroke-width='2'/%3E%3C/svg%3E");
   }
 }
 
@@ -331,27 +341,10 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
   align-items: start;
+  margin-top: 2rem;
 }
+.badge-creator > * { min-width: 0; }
 @media (max-width: 600px) { .badge-creator { grid-template-columns: 1fr; } }
-.badge-tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
-.badge-tab-btn {
-  background: none; border: none; padding: 0.5rem 0;
-  font: inherit; cursor: pointer;
-  border-bottom: 2px solid transparent;
-  color: var(--fg-muted);
-}
-.badge-tab-btn.is-active { color: var(--accent); border-bottom-color: var(--accent); }
-.badge-pane { display: none; }
-.badge-pane.is-active { display: block; }
-.dropzone {
-  border: 2px dashed var(--border);
-  border-radius: 8px;
-  padding: 2rem 1rem;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-.dropzone:hover { border-color: var(--accent); }
 .editor-controls { display: flex; flex-direction: column; gap: 1rem; }
 .control-group { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; color: var(--fg-muted); }
 .control-group input[type="text"], .control-group select {
@@ -364,7 +357,7 @@ body {
   font-size: 0.9rem;
 }
 .color-pickers { display: flex; gap: 0.5rem; }
-.color-pickers input[type="color"] {
+.control-group input[type="color"] {
   width: 44px; height: 36px;
   padding: 2px;
   cursor: pointer;
@@ -385,9 +378,76 @@ body {
   border: 1px solid var(--border);
   border-radius: 4px;
   display: inline-block;
+  width: 100%;
+  box-sizing: border-box;
 }
-canvas { display: block; width: 320px; height: 113px; image-rendering: pixelated; }
+.canvas-container #badgeCanvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
 .badge-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.preset-select { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.preset-btn {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.preset-btn:hover { border-color: var(--accent); }
+.preset-btn.is-active { border-color: var(--accent); }
+.frame-strip-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.frame-strip {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+.frame-thumbnail {
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 3px;
+  padding: 2px;
+}
+.frame-thumbnail canvas {
+  display: block;
+  width: 88px;
+  height: 31px;
+  image-rendering: pixelated;
+}
+.frame-thumbnail.is-active { border-color: var(--accent); }
+.frame-delay-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--fg-muted); }
+.frame-delay-row input[type="number"] {
+  width: 90px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.4rem 0.5rem;
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.frame-num {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 0.6rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--fg-on-accent);
+}
 .badge-btn {
   background: var(--accent);
   color: var(--fg-on-accent);
@@ -401,6 +461,7 @@ canvas { display: block; width: 320px; height: 113px; image-rendering: pixelated
   text-transform: uppercase;
 }
 .badge-btn--ghost { background: transparent; color: var(--fg); border: 1px solid var(--border-strong); }
+.badge-btn--ghost:hover { border-color: var(--accent); }
 
 /* ─── Subpages (join, badge, enquiry) ─────────────────── */
 .subpage {
@@ -419,10 +480,14 @@ canvas { display: block; width: 320px; height: 113px; image-rendering: pixelated
   min-height: 100dvh;
   justify-content: flex-start;
 }
+.subpage .enquiry-inner {
+  padding-top: 9rem;
+}
 .subpage h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
   font-size: clamp(2rem, 5vw, 4rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   line-height: 1;
   margin-bottom: 1rem;
   text-transform: uppercase;
@@ -430,6 +495,13 @@ canvas { display: block; width: 320px; height: 113px; image-rendering: pixelated
 .subpage h1 sup { color: var(--accent); font-size: 0.4em; vertical-align: super; }
 .subpage h1 .h1-accent { color: var(--accent-2); }
 .subpage p { color: var(--fg-muted); line-height: 1.6; margin-bottom: 1rem; max-width: 38rem; }
+.subpage h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.badge-intro { max-width: none; white-space: nowrap; }
+@media (max-width: 600px) { .badge-intro { white-space: normal; } }
 .subpage form { display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem; }
 .subpage label { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; color: var(--fg-muted); }
 .subpage input, .subpage select, .subpage textarea {
@@ -508,13 +580,21 @@ canvas { display: block; width: 320px; height: 113px; image-rendering: pixelated
   border-bottom: 1px dotted var(--accent);
 }
 .join-steps a:hover { color: var(--accent); }
+.inline-link {
+  color: var(--fg);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
+}
+.inline-link:hover { color: var(--accent); }
+.inline-link.badge-link:hover { color: var(--accent-2); border-bottom-color: var(--accent-2); }
 
 /* ─── Widget snippet section ──────────────────────────── */
 .widget-section { margin: 0 0 2rem; }
 .widget-section h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
   font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   margin: 0 0 0.5rem;
 }
 .widget-code {
@@ -602,6 +682,23 @@ canvas { display: block; width: 320px; height: 113px; image-rendering: pixelated
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
+.join-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.6rem;
+  background-image: var(--select-arrow);
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  background-size: 0.8rem;
+}
+.join-form select option {
+  background-color: var(--bg);
+  color: var(--fg);
+}
+.join-form textarea {
+  min-height: 9rem;
+  resize: vertical;
+}
 .join-form input::file-selector-button {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -612,6 +709,10 @@ canvas { display: block; width: 320px; height: 113px; image-rendering: pixelated
   padding: 0.45rem 0.9rem;
   margin-right: 0.75rem;
   cursor: pointer;
+}
+.join-form input[type="file"].has-file {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 .field-error {
   font-style: normal;
@@ -671,6 +772,22 @@ canvas { display: block; width: 320px; height: 113px; image-rendering: pixelated
   color: var(--fg-muted);
   border-top: 1px solid var(--border);
   background: var(--panel-alt);
+}
+.join-badge-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.join-badge-field .join-badge-label {
+  font-size: 0.82rem;
+  color: var(--fg-muted);
+  letter-spacing: 0.02em;
+}
+.join-badge-field em {
+  font-style: normal;
+  color: var(--fg-faint);
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 .join-badge-row {
   display: flex;

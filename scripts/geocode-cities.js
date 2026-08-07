@@ -1,3 +1,8 @@
+// ============================================================
+// scripts/geocode-cities.js — one-off maintenance script
+// Run with `node`, NOT shipped to the site. Builds data/cities.json
+// from a state -> [city] list using the Nominatim geocoder.
+// ============================================================
 'use strict';
 
 // One-time geocoder: builds data/cities.json from a state->[city] source list.
@@ -28,10 +33,12 @@ function loadOr(rel, fallback) {
   catch (e) { return fallback; }
 }
 
+// ── Geocode a city via Nominatim ──
 async function geocode(city, state) {
   const q = encodeURIComponent(`${city}, ${state}, India`);
   const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&accept-language=en&countrycodes=in`;
   const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+  // Rate-limited (429): back off 5s, then retry — Nominatim enforces ~1 req/s.
   if (res.status === 429) { await new Promise(r => setTimeout(r, 5000)); return geocode(city, state); }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const body = await res.json();
@@ -44,6 +51,7 @@ async function geocode(city, state) {
   };
 }
 
+// ── Main: resumable build of data/cities.json ──
 async function main() {
   const byState = loadOr(INPUT, null);
   if (!byState) throw new Error('Cannot read input JSON: ' + INPUT);

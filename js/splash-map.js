@@ -1,3 +1,8 @@
+// ============================================================
+// js/splash-map.js — SRM NCR WebRing splash map
+// Projects each member's location onto the India SVG and draws
+// animated dots plus dashed routes between consecutive members.
+// ============================================================
 /* SRM NCR Webring — splash map (India) with animated ring.
  *
  * Reads the member list via SRMData, projects each member's lat/lng into the
@@ -33,6 +38,7 @@
   var CITY_COORDS = null;
   var FALLBACK = { lat: 28.6139, lng: 77.2090 }; // Delhi
 
+  // ── Data loading (members + city coordinates) ──
   function loadCities() {
     if (CITY_COORDS) return Promise.resolve(CITY_COORDS);
     return fetch('data/cities.json')
@@ -84,6 +90,7 @@
            ' ' + b.x.toFixed(1) + ' ' + b.y.toFixed(1);
   }
 
+  // ── Render: routes then member dots ──
   function render(svg, members, cities) {
     var NS = 'http://www.w3.org/2000/svg';
     var activeMembers = members.filter(function (m) { return !m.hidden && !m.unreachableSince; });

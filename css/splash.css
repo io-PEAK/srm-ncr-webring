@@ -1,3 +1,9 @@
+/* ============================================================
+   css/splash.css — SRM NCR WebRing landing page stylesheet
+   Covers the full-screen splash: hero type, animated India map,
+   about and join panels, ring widget and all responsive
+   breakpoints. Fonts come from ../fonts.css.
+   ============================================================ */
 @import url('../fonts.css');
 
 :root {
@@ -12,6 +18,7 @@
   --accent-2: #c8a008;
   --panel-alt: #efece7;
   --fg-on-accent: #fff;
+  --font-display: 'Minecraft', sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -26,6 +33,7 @@
     --accent-2: #c8a008;
     --panel-alt: #1a1918;
     --fg-on-accent: #fff;
+    --font-display: 'Minecraft', sans-serif;
   }
 }
 
@@ -143,6 +151,9 @@ body {
 }
 
 .hero-top {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0;
   font-size: 12cqw;
   color: var(--fg);
   display: flex;
@@ -165,11 +176,13 @@ body {
 }
 
 .hero-bottom-text {
+  font-family: 'Minecraft', sans-serif;
+  font-weight: 400;
   font-size: 14cqw;
   line-height: 0.75;
   white-space: nowrap;
+  letter-spacing: 0;
   color: var(--accent);
-  -webkit-text-stroke: 4px var(--accent);
 }
 
 .hero-bottom-text sup {
@@ -179,13 +192,12 @@ body {
   margin-right: 0.02em;
   letter-spacing: 0.01em;
   color: var(--accent-2);
-  -webkit-text-stroke-color: var(--accent-2);
 }
 
 /* Top-right: SRM logo where webring.ca shows the flag */
 .hero-flag {
-  height: 9cqw;
-  max-height: 110px;
+  height: 13cqw;
+  max-height: 160px;
   width: auto;
   flex-shrink: 0;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
@@ -369,6 +381,9 @@ body {
 
 /* Heading */
 .about-headline {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0;
   font-size: clamp(3rem, 7vw, 8rem);
   line-height: 0.92;
   color: var(--fg);
@@ -1166,6 +1181,7 @@ body {
 }
 
 .join-info:hover,
+.join-info.is-overlay-hover,
 .join-info:focus-visible {
   background: var(--accent);
   border-color: var(--accent);
@@ -1173,6 +1189,9 @@ body {
 }
 
 .join-headline {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0;
   font-size: clamp(4rem, 11vw, 10rem);
   color: var(--fg);
   display: flex;
@@ -1182,7 +1201,6 @@ body {
 
 .join-headline-accent {
   color: var(--accent);
-  -webkit-text-stroke: 3px var(--accent);
 }
 
 .join-count {
@@ -1193,10 +1211,11 @@ body {
 }
 
 .join-count-number {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0;
   font-size: clamp(2rem, 8vw, 7rem);
-  font-weight: 900;
   line-height: 1;
-  letter-spacing: -0.04em;
   color: var(--accent);
 }
 
@@ -1272,7 +1291,8 @@ body {
   transition: opacity 0.2s, transform 0.2s;
 }
 
-.join-button:hover {
+.join-button:hover,
+.join-button.is-overlay-hover {
   opacity: 0.85;
 }
 
@@ -1383,7 +1403,7 @@ body {
 
   .hero-flag {
     position: static;
-    height: 10vw;
+    height: 20vw;
     margin-left: auto;
   }
 
@@ -1403,7 +1423,6 @@ body {
 
   .hero-bottom-text {
     font-size: 28cqw;
-    -webkit-text-stroke: 3px var(--accent);
   }
 
   .ring-widget { width: 60vw; justify-content: center; }
@@ -1676,7 +1695,7 @@ body {
   .join-headline { font-size: clamp(4rem, 9vw, 7rem); }
   .join-count-number { font-size: clamp(2rem, 6vw, 5rem); }
   .join-inner { width: calc(100% - 3rem); height: calc(100% - 3rem); }
-  .hero-flag { height: 8cqw; }
+  .hero-flag { height: 12cqw; }
   .splash-map { max-height: 60vh; }
 
   .directory-inner { padding: 2rem 2rem; gap: 1.5rem; }

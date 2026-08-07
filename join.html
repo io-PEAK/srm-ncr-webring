@@ -1,3 +1,9 @@
+<!-- ============================================================
+     join.html — SRM NCR WebRing join / update form
+     Subpage for submitting a new site or updating an existing
+     entry (name, URL, program, city, grad date, emails, badge
+     upload), handled by js/join.js; badges made via badge.html.
+     ============================================================ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,6 +23,7 @@
         <h1>Join<br>the <span class="h1-accent">ring.</span></h1>
         <p>Build a portfolio site, drop our widget into your footer, and submit this form. Your entry is turned into a pull request automatically and merged once it's approved.</p>
 
+        <!-- Widget snippet: pre-filled embed code members paste into their site footer -->
         <section id="widget" class="widget-section">
             <h2>Your widget code</h2>
             <div class="widget-code">
@@ -25,6 +32,7 @@
             </div>
         </section>
 
+        <!-- ── Join form; validated and submitted to the ring backend by js/join.js ── -->
         <form id="joinForm" class="join-form" novalidate>
             <label class="field-full">
                 Name
@@ -68,18 +76,19 @@
                 <em>Backup contact. Never published.</em>
             </label>
 
-            <label class="field-full">
-                Badge Image
+            <div class="field-full join-badge-field">
+                <span class="join-badge-label">Badge Image</span>
                 <div class="join-badge-row">
                     <img id="badgePreview" class="join-badge-preview is-empty" alt="" aria-hidden="true">
-                    <input type="file" id="badge" required accept="image/png,image/gif,image/jpeg">
+                    <input type="file" id="badge" aria-label="Badge Image" required accept="image/png,image/gif,image/jpeg">
                 </div>
-                <em>88&times;31 px badge, max 1 MB (PNG, GIF, or JPEG).</em>
-            </label>
+                <em>88&times;31 px badge, max 1 MB (PNG, GIF, or JPEG). Need one? <a href="badge.html" class="inline-link badge-link">Make a badge here</a>.</em>
+            </div>
 
             <button type="submit" class="join-submit" id="joinSubmit">Submit request</button>
         </form>
 
+        <!-- Submission status (populated by js/join.js) -->
         <div id="output" class="join-status" role="status"></div>
     </main>
 

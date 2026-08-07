@@ -1,3 +1,9 @@
+// ============================================================
+// js/preview.js — SRM NCR WebRing site preview panel
+// Loads member sites in a sandboxed iframe (with a timeout and a
+// fallback card) and wires prev/next/random/open controls to the
+// Explore panel of the ring carousel.
+// ============================================================
 // ── Site preview (Explore panel) ──
 // Adapted from webring.ca's public/preview.js. Loads members via SRMData
 // and renders an iframe preview with prev/next/random/open controls.
@@ -46,6 +52,7 @@
     panel.style.opacity = '0';
     panel.style.transition = 'opacity 0.2s';
 
+    // ── Preview state & helpers ──
     function previewMember(m) {
       return {
         name: m.name,
@@ -64,6 +71,7 @@
       openEl.href = m.url;
     }
 
+    // ── Preview lifecycle: destroy / fallback / load ──
     function destroyPreview() {
       if (loadTimer) { clearTimeout(loadTimer); loadTimer = null; }
       if (currentIframe) { currentIframe.remove(); currentIframe = null; }
@@ -114,6 +122,8 @@
         clearTimeout(loadTimer);
         loadTimer = null;
 
+        // Reading contentWindow.location throws for cross-origin sites; a throw
+        // means it framed fine, while a readable page means framing was blocked.
         try {
           iframe.contentWindow.location.href;
           showFallback(idx);
@@ -152,6 +162,7 @@
       if (isActive) loadPreview(currentIdx);
     });
 
+    // ── Overlay: dismiss to interact, restore on exit/blur ──
     // Click overlay to dismiss and interact with iframe
     var pendingDismiss = false;
     overlay.addEventListener('click', function (e) {

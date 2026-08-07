@@ -1,3 +1,9 @@
+// ============================================================
+// js/splash.js — SRM NCR WebRing 3D cylinder carousel
+// Drives the ring of panels (wheel/touch/keyboard/snap-to) and
+// emits panelchange/panelsettle/panelunsettle events that the
+// other panels listen for.
+// ============================================================
 /* SRM NCR Webring — 3D cylinder carousel driver.
  *
  * Adapted from webring.ca's public/splash.js: a continuous-angle cylinder
@@ -14,6 +20,7 @@
 (function () {
   'use strict';
 
+  // ── Setup: panel geometry, session restore, initial layout ──
   var isMobile = window.matchMedia('(max-width: 767px)').matches;
   var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -57,6 +64,7 @@
   function layoutPanels() {
     for (var i = 0; i < panels.length; i++) {
       var angle = i * ANGLE_STEP;
+      // Mobile spins panels around X (vertical deck); desktop uses Y (horizontal ring).
       panels[i].style.transform = isMobile
         ? 'rotateX(' + (-angle) + 'deg) translateZ(' + radius + 'px)'
         : 'rotateY(' + angle + 'deg) translateZ(' + radius + 'px)';
@@ -106,6 +114,7 @@
       e.preventDefault();
 
       var delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      // Normalise deltaMode: 1 = line units (≈40px), 2 = page units (one panel).
       if (e.deltaMode === 1) delta *= 40;
       if (e.deltaMode === 2) delta *= panelDim;
 
@@ -373,27 +382,51 @@
     renderTrack();
   });
 
-  // ── Join button click overlay ──
+  // ── Join / info overlay ──
   // Chrome's preserve-3d hit-testing can route clicks to a rotated neighbouring
-  // panel instead of the Join button. The fix: a transparent <a> element
-  // OUTSIDE the ring's perspective context. It sits invisibly over the real
-  // button on settle and hides on unsettle.
-  var joinOverlay = document.getElementById('join-link-overlay');
+  // panel instead of an interactive element. The fix: transparent <a> elements
+  // OUTSIDE the ring's perspective context. They sit invisibly over the real
+  // controls on settle and hide on unsettle.
   var JOIN_IDX = PANEL_COUNT - 1;
-  if (joinOverlay) {
+  var overlays = [
+    { el: document.getElementById('join-link-overlay'), sel: '.join-button' },
+    { el: document.getElementById('info-link-overlay'), sel: '.join-info' },
+  ].filter(function (o) { return o.el; });
+
+  if (overlays.length) {
     ring.addEventListener('panelsettle', function (e) {
       if (e.detail.index !== JOIN_IDX) return;
-      var btn = document.querySelector('.panel[data-index="' + JOIN_IDX + '"] .join-button');
-      if (!btn) return;
-      var r = btn.getBoundingClientRect();
-      joinOverlay.style.top = r.top + 'px';
-      joinOverlay.style.left = r.left + 'px';
-      joinOverlay.style.width = r.width + 'px';
-      joinOverlay.style.height = r.height + 'px';
-      joinOverlay.style.display = 'block';
+      var panel = document.querySelector('.panel[data-index="' + JOIN_IDX + '"]');
+      if (!panel) return;
+      overlays.forEach(function (o) {
+        var target = panel.querySelector(o.sel);
+        if (!target) return;
+        var r = target.getBoundingClientRect();
+        o.el.style.top = r.top + 'px';
+        o.el.style.left = r.left + 'px';
+        o.el.style.width = r.width + 'px';
+        o.el.style.height = r.height + 'px';
+        o.el.style.display = 'block';
+      });
     });
     ring.addEventListener('panelunsettle', function () {
-      joinOverlay.style.display = 'none';
+      overlays.forEach(function (o) { o.el.style.display = 'none'; });
+    });
+    // The overlay covers the real control, so the control's own :hover never
+    // fires. Forward hover state from the overlay to the control underneath.
+    overlays.forEach(function (o) {
+      o.el.addEventListener('mouseenter', function () {
+        var panel = document.querySelector('.panel[data-index="' + JOIN_IDX + '"]');
+        if (!panel) return;
+        var target = panel.querySelector(o.sel);
+        if (target) target.classList.add('is-overlay-hover');
+      });
+      o.el.addEventListener('mouseleave', function () {
+        var panel = document.querySelector('.panel[data-index="' + JOIN_IDX + '"]');
+        if (!panel) return;
+        var target = panel.querySelector(o.sel);
+        if (target) target.classList.remove('is-overlay-hover');
+      });
     });
   }
 })();

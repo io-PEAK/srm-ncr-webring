@@ -1,3 +1,6 @@
+# Runs daily at midnight UTC (plus manual dispatch). Removes members
+# whose graduation date is past the 30-day grace period, emails them
+# via the Worker's /notify endpoint, and commits the cleaned members.json.
 name: Remove Graduated Members
 on:
   schedule:

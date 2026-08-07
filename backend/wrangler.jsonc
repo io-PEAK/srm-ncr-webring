@@ -1,3 +1,6 @@
+// Wrangler config for the backend Worker. Declares the EMAIL_STORE
+// and BADGE_STORE KV namespaces (with their remote IDs) used for
+// the private email mapping and uploaded member badges respectively.
 /**
  * For more details on how to configure Wrangler, refer to:
  * https://developers.cloudflare.com/workers/wrangler/configuration/

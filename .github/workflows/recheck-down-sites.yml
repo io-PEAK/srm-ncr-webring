@@ -1,3 +1,7 @@
+# Runs every 2 days (plus manual dispatch). Rechecks sites flagged
+# down: restores sites that are back up, sends a warning email at
+# day 10, permanently removes members at day 15, and commits the
+# updated members.json.
 name: Recheck Down Sites
 on:
   schedule:

@@ -1,3 +1,8 @@
+// ============================================================
+// js/badge.js — SRM NCR WebRing badge editor
+// Builds the animated 88x31 member badge on a <canvas>: emblem,
+// colour/accent presets, a frame strip, and GIF export via gif.js.
+// ============================================================
 function init() {
     // Idempotent guard — init() may be called both by DOMContentLoaded (when
     // badge DOM is present in the page directly, e.g. badge.html) and by
@@ -7,82 +12,32 @@ function init() {
     if (!canvas) return; // No badge DOM yet — let badge-panel.js mount and call us.
     window.__SRMBadgeInited = true;
 
-    // Tab switching
-    const tabs = document.querySelectorAll('.badge-tab-btn');
-    const panes = document.querySelectorAll('.badge-pane');
+    // Preload the ring tree logo for the badge emblem (same-origin, tiny).
+    var badgeLogo = new Image();
+    badgeLogo.src = 'img/tree_yellow.png';
+    var logoReady = false;
+    badgeLogo.onload = function () {
+        logoReady = true;
+        // Redraw already-generated frames so the emblem appears immediately.
+        if (typeof frames !== 'undefined' && frames.length > 0) generatePresetFrames();
+    };
 
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('is-active'));
-            panes.forEach(p => p.classList.remove('is-active'));
+    function isLight(hex) {
+        const n = parseInt(hex.slice(1), 16);
+        const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+        return (0.299 * r + 0.587 * g + 0.114 * b) > 140;
+    }
 
-            tab.classList.add('is-active');
-            const targetPane = document.getElementById(tab.dataset.tab);
-            if (targetPane) targetPane.classList.add('is-active');
-        });
-    });
-
-    // Path A: Upload own badge
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('fileInput');
-    const uploadFeedback = document.getElementById('uploadFeedback');
     const badgeCanvas = document.getElementById('badgeCanvas');
     const ctx = badgeCanvas.getContext('2d');
 
-    if (dropzone && fileInput) {
-        dropzone.addEventListener('click', () => fileInput.click());
-
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.style.borderColor = 'var(--accent-color)';
-        });
-
-        dropzone.addEventListener('dragleave', () => {
-            dropzone.style.borderColor = 'var(--border-color)';
-        });
-
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.style.borderColor = 'var(--border-color)';
-            if (e.dataTransfer.files.length > 0) {
-                handleUploadedFile(e.dataTransfer.files[0]);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleUploadedFile(e.target.files[0]);
-            }
-        });
-    }
-
-    function handleUploadedFile(file) {
-        if (!file.type.startsWith('image/')) {
-            uploadFeedback.innerHTML = `<span style="color: #ff5555;">Error: File must be an image.</span>`;
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                // Clear and draw uploaded image scaled to 88x31
-                ctx.clearRect(0, 0, 88, 31);
-                ctx.drawImage(img, 0, 0, 88, 31);
-                uploadFeedback.innerHTML = `<span style="color: #55ff55;">Loaded: ${file.name} (Preview updated)</span>`;
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // Path B: Dynamic editor logic
+    // Dynamic editor logic
     const badgeText = document.getElementById('badgeText');
     const badgeSubtext = document.getElementById('badgeSubtext');
     const bgColor1 = document.getElementById('bgColor1');
     const bgColor2 = document.getElementById('bgColor2');
-    const textColor = document.getElementById('textColor');
     const accentColor = document.getElementById('accentColor');
+    const treeColor = document.getElementById('treeColor');
     const presetButtons = document.querySelectorAll('.preset-btn');
     const frameStrip = document.getElementById('frameStrip');
     const btnAddFrame = document.getElementById('btnAddFrame');
@@ -90,62 +45,102 @@ function init() {
     const btnClearFrames = document.getElementById('btnClearFrames');
     const btnExport = document.getElementById('btnExport');
     const exportStatus = document.getElementById('exportStatus');
+    const frameDelayInput = document.getElementById('frameDelay');
 
     let frames = []; // Array of ImageData representing each frame
     let currentFrameIndex = 0;
     let selectedPreset = 'shimmer';
     let animationTimer = null;
+    let frameDelay = 250; // ms per frame (preview + exported GIF)
 
-    // Helper to render static elements on a temp canvas context
+    // Layout constants for the 88x31 canvas
+    const EMBLEM_X = 1, EMBLEM_W = 25;          // left emblem panel
+    const DIVIDER_X = EMBLEM_X + EMBLEM_W;      // thin accent divider
+    const TEXT_X = DIVIDER_X + 4;               // text starts here
+
+    // Draw one badge frame. Shared by every preset; animation handled below.
     function drawBadgeFrame(tempCtx, width, height, frameIndex, totalFrames) {
-        // Draw background gradient
+        // Background gradient
         const grad = tempCtx.createLinearGradient(0, 0, width, height);
         grad.addColorStop(0, bgColor1.value);
         grad.addColorStop(1, bgColor2.value);
         tempCtx.fillStyle = grad;
         tempCtx.fillRect(0, 0, width, height);
 
-        // Draw side brand line/indicator
-        tempCtx.fillStyle = accentColor.value;
-        tempCtx.fillRect(2, 2, 3, height - 4);
+        // Emblem panel (subtle contrast so the logo reads on any background)
+        tempCtx.fillStyle = isLight(bgColor1.value) ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.08)';
+        tempCtx.fillRect(EMBLEM_X, 1, EMBLEM_W, height - 2);
 
-        // Draw small Ring hexagon / shape on the left
+        // Tree emblem (tinted with the tree color picker)
+        var tintCache = null;
+        function getTintedLogo() {
+            if (tintCache && tintCache.color === treeColor.value) return tintCache.canvas;
+            const w = 22;
+            const h = Math.round(w * (badgeLogo.height / badgeLogo.width));
+            const off = document.createElement('canvas');
+            off.width = w;
+            off.height = h;
+            const o = off.getContext('2d');
+            o.drawImage(badgeLogo, 0, 0, w, h);
+            o.globalCompositeOperation = 'source-in';
+            o.fillStyle = treeColor.value;
+            o.fillRect(0, 0, w, h);
+            tintCache = { color: treeColor.value, canvas: off };
+            return off;
+        }
+
+        if (logoReady) {
+            const logo = getTintedLogo();
+            tempCtx.drawImage(logo, EMBLEM_X + 2, (height - logo.height) / 2);
+        } else {
+            // Fallback: primitive tree so the badge still has an emblem
+            tempCtx.fillStyle = treeColor.value;
+            tempCtx.beginPath();
+            tempCtx.moveTo(13, 6);
+            tempCtx.lineTo(20, 18);
+            tempCtx.lineTo(6, 18);
+            tempCtx.closePath();
+            tempCtx.fill();
+            tempCtx.fillRect(11, 18, 4, 6);
+        }
+
+        // Accent divider between emblem and text
+        tempCtx.fillStyle = accentColor.value;
+        tempCtx.fillRect(DIVIDER_X, 3, 1, height - 6);
+
+        // Accent border
         tempCtx.strokeStyle = accentColor.value;
         tempCtx.lineWidth = 1;
-        tempCtx.beginPath();
-        tempCtx.arc(12, 15, 4, 0, Math.PI * 2);
-        tempCtx.stroke();
-        
-        // Inner dot
-        tempCtx.fillStyle = accentColor.value;
-        tempCtx.beginPath();
-        tempCtx.arc(12, 15, 1.5, 0, Math.PI * 2);
-        tempCtx.fill();
+        tempCtx.strokeRect(0.5, 0.5, width - 1, height - 1);
 
-        // Draw border
-        tempCtx.strokeStyle = accentColor.value;
-        tempCtx.strokeRect(0, 0, width, height);
-
-        // Apply animations based on current preset and frameIndex
         const textVal = badgeText.value.toUpperCase();
         const subVal = badgeSubtext.value;
-        
-        tempCtx.font = "bold 9px 'Kode Mono', monospace";
-        tempCtx.textBaseline = "middle";
+
+        // Draw a text label, auto-shrinking to fit the text region.
+        // Integer font sizes + rounded positions keep small text crisp.
+        function drawTextLabel(val, fullVal, y, size, alpha) {
+            let f = Math.max(5, Math.round(size));
+            tempCtx.font = 'bold ' + f + "px Arial, 'Helvetica Neue', sans-serif";
+            tempCtx.textBaseline = 'middle';
+            const maxW = width - TEXT_X - 2;
+            while (f > 5 && tempCtx.measureText(fullVal).width > maxW) {
+                f -= 1;
+                tempCtx.font = 'bold ' + f + "px Arial, 'Helvetica Neue', sans-serif";
+            }
+            tempCtx.globalAlpha = alpha;
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillText(val, Math.round(TEXT_X), Math.round(y));
+            tempCtx.globalAlpha = 1;
+        }
 
         if (selectedPreset === 'shimmer') {
-            // Text Rendering
-            tempCtx.fillStyle = textColor.value;
-            tempCtx.fillText(textVal, 22, 11);
-
-            tempCtx.font = "5px 'Kode Mono', monospace";
-            tempCtx.fillStyle = 'rgba(255,255,255,0.7)';
-            tempCtx.fillText(subVal, 22, 22);
+            drawTextLabel(textVal, textVal, 11, 10, 1);
+            drawTextLabel(subVal, subVal, 22, 7, 1);
 
             // Diagonal shimmer sweep
             const progress = frameIndex / (totalFrames - 1);
             const sweepX = -20 + progress * (width + 40);
-            
+
             tempCtx.fillStyle = 'rgba(255, 255, 255, 0.15)';
             tempCtx.beginPath();
             tempCtx.moveTo(sweepX, 0);
@@ -156,21 +151,30 @@ function init() {
             tempCtx.fill();
 
         } else if (selectedPreset === 'glitch') {
-            // Occasional horizontal glitch text offset
             let offset = 0;
             let doGlitch = false;
-            
+
+            // Only frames 2 and 7 glitch so the corruption reads as a brief interruption.
             if (frameIndex === 2 || frameIndex === 7) {
                 offset = (Math.random() - 0.5) * 4;
                 doGlitch = true;
             }
 
-            tempCtx.fillStyle = textColor.value;
-            tempCtx.fillText(textVal, 22 + offset, 11);
+            const glitch = function (val, y, size) {
+                let f = Math.max(5, Math.round(size));
+                tempCtx.font = 'bold ' + f + "px Arial, 'Helvetica Neue', sans-serif";
+                tempCtx.textBaseline = 'middle';
+                const maxW = width - TEXT_X - 2;
+                while (f > 5 && tempCtx.measureText(val).width > maxW) {
+                    f -= 1;
+                    tempCtx.font = 'bold ' + f + "px Arial, 'Helvetica Neue', sans-serif";
+                }
+                tempCtx.fillStyle = '#ffffff';
+                tempCtx.fillText(val, Math.round(TEXT_X + offset), Math.round(y));
+            };
 
-            tempCtx.font = "5px 'Kode Mono', monospace";
-            tempCtx.fillStyle = 'rgba(255,255,255,0.7)';
-            tempCtx.fillText(subVal, 22 + offset, 22);
+            glitch(textVal, 11, 10);
+            glitch(subVal, 22, 7);
 
             if (doGlitch) {
                 // Glitch scanline bar
@@ -182,17 +186,13 @@ function init() {
             // Reveal text character by character
             const charsToDraw = Math.ceil((frameIndex / (totalFrames - 3)) * textVal.length);
             const partialText = textVal.substring(0, Math.max(0, charsToDraw));
-            
-            tempCtx.fillStyle = textColor.value;
-            tempCtx.fillText(partialText, 22, 11);
+            drawTextLabel(partialText, textVal, 11, 10, 1);
 
-            // Subtext typing delay
+            // Subtext types after the main text finishes
             if (frameIndex > totalFrames / 2) {
-                const subChars = Math.ceil(((frameIndex - totalFrames/2) / (totalFrames/2 - 1)) * subVal.length);
+                const subChars = Math.ceil(((frameIndex - totalFrames / 2) / (totalFrames / 2 - 1)) * subVal.length);
                 const partialSub = subVal.substring(0, Math.max(0, subChars));
-                tempCtx.font = "5px 'Kode Mono', monospace";
-                tempCtx.fillStyle = 'rgba(255,255,255,0.7)';
-                tempCtx.fillText(partialSub, 22, 22);
+                drawTextLabel(partialSub, subVal, 22, 7, 1);
             }
         }
     }
@@ -233,7 +233,7 @@ function init() {
                 renderPreviewFrame();
                 highlightFrameStripActive();
             }
-        }, 120); // 120ms per frame
+        }, frameDelay); // ms per frame
     }
 
     // UI Frame strip rendering
@@ -249,7 +249,8 @@ function init() {
             thumbCtx.putImageData(frame, 0, 0);
 
             const container = document.createElement('div');
-            container.className = `frame-thumbnail ${index === currentFrameIndex ? 'is-active' : ''}`;
+            container.className = 'frame-thumbnail' +
+                (index === currentFrameIndex ? ' is-active' : '');
             container.dataset.index = index;
             container.appendChild(thumb);
 
@@ -294,10 +295,12 @@ function init() {
     });
 
     // Form input listeners
-    [badgeText, badgeSubtext, bgColor1, bgColor2, textColor, accentColor].forEach(input => {
+    [badgeText, badgeSubtext, bgColor1, bgColor2, accentColor, treeColor].forEach(input => {
         if (input) {
-            input.addEventListener('input', () => {
-                generatePresetFrames();
+            ['input', 'change'].forEach(evt => {
+                input.addEventListener(evt, () => {
+                    generatePresetFrames();
+                });
             });
         }
     });
@@ -339,6 +342,16 @@ function init() {
         });
     }
 
+    // GIF delay control (applies to preview playback and exported GIF)
+    if (frameDelayInput) {
+        frameDelayInput.addEventListener('input', () => {
+            const n = parseInt(frameDelayInput.value, 10);
+            frameDelay = isNaN(n) ? 250 : Math.min(2000, Math.max(50, n));
+            frameDelayInput.value = frameDelay;
+            if (animationTimer) startPlayback();
+        });
+    }
+
     // Real Browser-Side GIF Encoding via gif.js and cross-origin Web Worker trick
     if (btnExport) {
         btnExport.addEventListener('click', async () => {
@@ -374,7 +387,7 @@ function init() {
 
                 frames.forEach((frameData) => {
                     tempCtx.putImageData(frameData, 0, 0);
-                    gif.addFrame(tempCtx, { copy: true, delay: 120 });
+                    gif.addFrame(tempCtx, { copy: true, delay: frameDelay });
                 });
 
                 exportStatus.textContent = 'Rendering GIF...';

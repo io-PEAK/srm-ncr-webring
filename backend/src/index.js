@@ -1,3 +1,9 @@
+// ============================================================
+// backend/src/index.js — SRM NCR WebRing Cloudflare Worker
+// Join/update PR creation, enquiry issues, badge uploads, and
+// per-member KV state. Requires GitHub token, KV and R2 bindings.
+// ============================================================
+
 const BADGE_MAX_BYTES = 1024 * 1024; // 1 MB
 
 const BADGE_SIGNATURES = [
@@ -83,6 +89,46 @@ async function geocodeLocation(location) {
   }
 }
 
+// Enquiry type → GitHub label. Kept in sync with the <select> in enquiry.html.
+const TYPE_LABELS = {
+  'broken-link': 'enquiry-broken-link',
+  'grad-date-correction': 'enquiry-grad-date',
+  'removal': 'enquiry-removal',
+  'badge-change': 'enquiry-badge',
+  'other': 'enquiry-other',
+};
+
+const TYPE_LABEL_COLORS = {
+  'enquiry-broken-link': 'd73a4a',
+  'enquiry-grad-date': '0075ca',
+  'enquiry-removal': 'cf222e',
+  'enquiry-badge': '0e8a16',
+  'enquiry-other': '7057ff',
+};
+
+// GitHub refuses to create an issue that references a label that doesn't
+// exist (422). Make sure each label exists before creating the issue.
+async function ensureLabels(headers, labels) {
+  const listRes = await fetch(
+    `https://api.github.com/repos/io-PEAK/srm-ncr-webring/labels`,
+    { headers }
+  );
+  if (!listRes.ok) return;
+  const existing = new Set((await listRes.json()).map(l => l.name));
+  for (const name of labels) {
+    if (existing.has(name)) continue;
+    await fetch(`https://api.github.com/repos/io-PEAK/srm-ncr-webring/labels`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        name,
+        color: TYPE_LABEL_COLORS[name] || '5319e7',
+        description: 'Enquiry type — ' + name,
+      }),
+    }).catch(() => {});
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     // ── CORS HEADERS ────────────────────────────────
@@ -165,13 +211,27 @@ export default {
         }
         const data = await request.json();
 
+        const name = String(data.name || '').trim();
+        const email = String(data.email || '').trim();
+        const type = String(data.type || '').trim();
+        const details = String(data.details || '').trim();
+        if (!name || !email || !type || !details) {
+          return new Response(JSON.stringify({ error: 'All fields are required.' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+
+        const label = TYPE_LABELS[type] || 'enquiry';
+        await ensureLabels(ghHeaders, ['enquiry', label]);
+
         const issueRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues`, {
           method: 'POST',
           headers: ghHeaders,
           body: JSON.stringify({
-            title: `Enquiry: ${data.type} — ${data.name}`,
-            body: `**Type:** ${data.type}\n**Name:** ${data.name}\n**Email:** ${data.email}\n**Details:**\n${data.details}`,
-            labels: ['enquiry'],
+            title: `Enquiry: ${type} — ${name}`,
+            body: `**Type:** ${type}\n**Name:** ${name}\n**Email:** ${email}\n**Details:**\n${details}`,
+            labels: ['enquiry', label],
           }),
         });
         const issue = await issueRes.json();
@@ -414,6 +474,19 @@ export default {
       };
       await env.EMAIL_STORE.put(entry.website, JSON.stringify(emailData));
 
+      // If this college email has joined before, this request is an update to
+      // that member's existing entry, not a brand-new member.
+      const collegeKey = 'college:' + emailData.collegeEmail.toLowerCase().trim();
+      const existingMappingRaw = await env.EMAIL_STORE.get(collegeKey);
+      let existingSite = null;
+      if (existingMappingRaw) {
+        try {
+          existingSite = JSON.parse(existingMappingRaw).website || null;
+        } catch (err) {
+          existingSite = null;
+        }
+      }
+
       // Strip emails from the public payload before committing to git
       delete entry.collegeEmail;
       delete entry.personalEmail;
@@ -426,16 +499,34 @@ export default {
       const cleanBase64 = fileData.content.replace(/\s/g, '');
       const members = JSON.parse(atob(cleanBase64));
       
-      // Prevent duplicate website url registration
-      const exists = members.some(m => m.website.replace(/\/$/, '') === entry.website.replace(/\/$/, ''));
-      if (exists) {
+      const norm = s => String(s || '').replace(/\/+$/, '').toLowerCase();
+      const newSite = norm(entry.website);
+      const existingIndex = existingSite
+        ? members.findIndex(m => norm(m.website) === norm(existingSite))
+        : -1;
+
+      // Prevent a *different* member from registering an already-taken site.
+      const siteTaken = members.some((m, i) => i !== existingIndex && norm(m.website) === newSite);
+      if (siteTaken) {
         return new Response(JSON.stringify({ success: false, error: 'This website URL is already in the webring!' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         });
       }
 
-      members.push(entry);
+      const isUpdate = existingIndex >= 0;
+      if (isUpdate) {
+        members[existingIndex] = entry;
+      } else {
+        members.push(entry);
+      }
+
+      // Refresh the college-email → site mapping; drop the old site's email
+      // entry when the member changed their website.
+      await env.EMAIL_STORE.put(collegeKey, JSON.stringify({ website: entry.website }));
+      if (isUpdate && existingSite && norm(existingSite) !== newSite) {
+        await env.EMAIL_STORE.delete(existingSite);
+      }
 
       const mainRef = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/ref/heads/main`, { headers: ghHeaders }).then(r => r.json());
 
@@ -451,7 +542,7 @@ export default {
         method: 'PUT',
         headers: ghHeaders,
         body: JSON.stringify({
-          message: `Add ${entry.name} to webring`,
+          message: `${isUpdate ? 'Update' : 'Add'} ${entry.name} ${isUpdate ? 'in' : 'to'} webring`,
           content: btoa(JSON.stringify(members, null, 2)),
           sha: fileData.sha,
           branch: BRANCH_NAME,
@@ -493,10 +584,10 @@ export default {
         method: 'POST',
         headers: ghHeaders,
         body: JSON.stringify({
-          title: `Join request: ${entry.name}`,
+          title: `${isUpdate ? 'Update request' : 'Join request'}: ${entry.name}`,
           head: BRANCH_NAME,
           base: 'main',
-          body: `Automated join request.\n\n${JSON.stringify(entry, null, 2)}`,
+          body: `Automated ${isUpdate ? 'update' : 'join'} request.\n\n${JSON.stringify(entry, null, 2)}`,
         }),
       });
       const pr = await prRes.json();

@@ -1,114 +1,110 @@
+<!-- ============================================================
+     badge.html — SRM NCR WebRing badge generator
+     Interactive 88×31 badge editor: text, colors, and animation
+     presets with a live canvas preview that exports an animated
+     GIF via js/badge.js (gif.js loaded from CDN).
+     ============================================================ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#AF272F">
-    <title>Badge Generator — SRM NCR WebRing</title>
+    <title>Badge Generator | SRM NCR WebRing</title>
     <link rel="icon" href="img/tree_yellow.png" type="image/png">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js" defer></script>
 </head>
 <body class="subpage">
-    <a href="index.html" class="skip-link">Back to ring</a>
+    <a href="join.html" class="skip-link">Back to join form</a>
 
     <main class="panel-inner" style="max-width: 1100px;">
-        <h1>Member<br>badge.</h1>
-        <p>Every member site needs an 88×31 badge. Upload your own or use the editor to generate an animated GIF.</p>
+        <h1>Member<br><span class="h1-accent">badge.</span></h1>
+        <p class="badge-intro">Every member site needs an 88×31 badge. Use the editor to generate an animated GIF.</p>
 
         <div class="badge-creator">
+            <!-- Editor controls: badge text, colors, animation presets, and frame strip -->
             <div class="badge-editor-workspace">
-                <div class="badge-tabs">
-                    <button class="badge-tab-btn is-active" data-tab="editorTab">Create Animated Badge</button>
-                    <button class="badge-tab-btn" data-tab="uploadTab">Upload My Own</button>
-                </div>
+                <div class="editor-controls">
+                    <div class="control-group">
+                        <label>Text Label 
+                            <input type="text" id="badgeText" value="MY SITE" maxlength="12">
+                        </label>
+                    </div>
 
-                <div class="badge-pane is-active" id="editorTab">
-                    <div class="editor-controls">
-                        <div class="control-group">
-                            <label>Text Label (e.g. Name/Initials)
-                                <input type="text" id="badgeText" value="SHIVAM" max-length="12">
-                            </label>
-                        </div>
+                    <div class="control-group">
+                        <label>Subtext/Program
+                            <input type="text" id="badgeSubtext" value="SRM NCR" maxlength="16">
+                        </label>
+                    </div>
 
-                        <div class="control-group">
-                            <label>Subtext/Program
-                                <input type="text" id="badgeSubtext" value="B.Tech" max-length="16">
-                            </label>
-                        </div>
-
-                        <div class="control-group">
-                            <label>Background Colors (Gradient)
-                                <div class="color-pickers">
-                                    <input type="color" id="bgColor1" value="#111111">
-                                    <input type="color" id="bgColor2" value="#222222">
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="control-group">
-                            <label>Text Color
-                                <input type="color" id="textColor" value="#ffffff">
-                            </label>
-                        </div>
-
-                        <div class="control-group">
-                            <label>Border / Accent Color
-                                <input type="color" id="accentColor" value="#AF272F">
-                            </label>
-                        </div>
-
-                        <div class="control-group">
-                            <label>Animation Presets
-                                <div class="preset-select">
-                                    <button class="preset-btn is-active" data-preset="shimmer">Metallic Shimmer</button>
-                                    <button class="preset-btn" data-preset="glitch">Glitch Scan</button>
-                                    <button class="preset-btn" data-preset="typewriter">Typewriter</button>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="frame-strip-container">
-                            <label>Frames (GIF Delay: 100ms per frame)</label>
-                            <div class="frame-strip" id="frameStrip"></div>
-                            <div class="badge-actions">
-                                <button class="badge-btn badge-btn--ghost" id="btnAddFrame">+ Add Frame</button>
-                                <button class="badge-btn badge-btn--ghost" id="btnDeleteFrame">Delete Frame</button>
-                                <button class="badge-btn badge-btn--ghost" id="btnClearFrames">Reset All</button>
+                    <div class="control-group">
+                        <label>Background Colors
+                            <div class="color-pickers">
+                                <input type="color" id="bgColor1" value="#111111">
+                                <input type="color" id="bgColor2" value="#222222">
                             </div>
+                        </label>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Border Color
+                            <input type="color" id="accentColor" value="#AF272F">
+                        </label>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Tree Color
+                            <input type="color" id="treeColor" value="#FED701">
+                        </label>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Animation Presets
+                            <div class="preset-select">
+                                <button class="preset-btn is-active" data-preset="shimmer">Metallic Shimmer</button>
+                                <button class="preset-btn" data-preset="glitch">Glitch Scan</button>
+                                <button class="preset-btn" data-preset="typewriter">Typewriter</button>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="frame-strip-container">
+                        <div class="frame-delay-row">
+                            <label for="frameDelay">GIF Delay</label>
+                            <input type="number" id="frameDelay" value="250" min="50" max="2000" step="50">
+                            <span>ms per frame</span>
+                        </div>
+                        <div class="frame-strip" id="frameStrip"></div>
+                        <div class="badge-actions">
+                            <button class="badge-btn badge-btn--ghost" id="btnAddFrame">+ Add Frame</button>
+                            <button class="badge-btn badge-btn--ghost" id="btnDeleteFrame">Delete Frame</button>
+                            <button class="badge-btn badge-btn--ghost" id="btnClearFrames">Reset All</button>
                         </div>
                     </div>
-                </div>
-
-                <div class="badge-pane" id="uploadTab">
-                    <div class="dropzone" id="dropzone">
-                        <p>Drag and drop your badge image here (PNG, JPG, or GIF)</p>
-                        <p>or</p>
-                        <button class="badge-btn badge-btn--ghost" type="button">Choose File</button>
-                        <input type="file" id="fileInput" accept="image/*" style="display:none;">
-                    </div>
-                    <div id="uploadFeedback" style="margin-top: 1rem; font-size: 0.85rem; text-align: center;"></div>
                 </div>
             </div>
 
+            <!-- Live preview: renders frames to the 88×31 canvas and exports the animated GIF -->
             <div class="badge-preview-panel">
                 <h3 style="margin-bottom: 0.5rem;">Live Preview</h3>
                 <div class="canvas-container">
                     <canvas id="badgeCanvas" width="88" height="31"></canvas>
                 </div>
                 <p style="font-size: 0.8rem; color: var(--fg-muted); text-align: center;">
-                    Size: 88 × 31 pixels (standard webring badge format)
+                    Size: 88 × 31 pixels 
                 </p>
-                <button class="badge-btn" id="btnExport" style="width: 100%; max-width: 250px;">
+                <button class="badge-btn" id="btnExport" style="width: 100%; max-width: 250px; margin: 0 auto;">
                     Export Animated GIF
                 </button>
                 <div id="exportStatus" style="font-size: 0.85rem; color: var(--accent); text-align: center;"></div>
             </div>
         </div>
 
-        <a href="index.html" class="back-link">← Back to ring</a>
+        <a href="join.html" class="back-link">← Back to join form</a>
     </main>
 
+    <!-- Frame generation and GIF export are handled by js/badge.js (gif.js from CDN) -->
     <script src="js/badge.js"></script>
 </body>
 </html>

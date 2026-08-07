@@ -1,3 +1,7 @@
+# Scheduled health check (every 3 days, plus manual dispatch) that
+# probes each member's website. Reachable sites get warning flags
+# cleared; unreachable sites are flagged hidden, and the resulting
+# members.json is committed back.
 name: Check Member Sites
 on:
   schedule:
