@@ -1,7 +1,11 @@
 # Scheduled health check (every 3 days, plus manual dispatch) that
 # probes each member's website. Reachable sites get warning flags
-# cleared; unreachable sites are flagged hidden, and the resulting
-# members.json is committed back.
+# cleared; unreachable sites are flagged hidden.
+#
+# Direct pushes to main are blocked by branch protection (the
+# "validate" status check only runs on pull requests), so the results
+# are pushed as a pull request that the Validate Join PR workflow
+# validates and auto-merges.
 name: Check Member Sites
 on:
   schedule:
@@ -10,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   check:
@@ -56,10 +61,25 @@ jobs:
           })();
           "
 
-      - name: Commit changes if any
+      - name: Open PR with health check results
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Nothing changed — skip. (git diff --quiet exits 1 when changed;
+          # inside an `if` it is exempt from the step's set -e.)
+          if git diff --quiet data/members.json; then
+            echo "No member status changes; skipping."
+            exit 0
+          fi
+
+          BRANCH="ci/check-sites-$(date +%s)"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add data/members.json
-          git diff --staged --quiet || git commit -m "chore: update site health status (3-day check)"
-          git push
+          git commit -m "chore: update site health status (3-day check)"
+          git push origin "$BRANCH"
+
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore: update site health status (3-day check)" \
+            --body "Automated health-check results. The **Validate Join PR** workflow validates and auto-merges this."
